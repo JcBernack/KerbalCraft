@@ -32,6 +32,11 @@ namespace CraftShareClient
             craft = CraftPOST(craft);
         }
 
+        private void button3_Click(object sender, EventArgs e)
+        {
+            var craft = CraftGET(textBox1.Text);
+        }
+
         private IEnumerable<SharedCraft> CraftGET()
         {
             var request = WebRequest.Create("http://localhost:8000/api/crafts/");
@@ -41,6 +46,18 @@ namespace CraftShareClient
             {
                 if (inStream == null) return null;
                 return (List<SharedCraft>)jsonSerializer.ReadObject(inStream);
+            }
+        }
+
+        private SharedCraft CraftGET(string id)
+        {
+            var request = WebRequest.Create("http://localhost:8000/api/craft/" + id);
+            var jsonSerializer = new DataContractJsonSerializer(typeof(SharedCraft));
+            using (var response = request.GetResponse())
+            using (var inStream = response.GetResponseStream())
+            {
+                if (inStream == null) return null;
+                return (SharedCraft)jsonSerializer.ReadObject(inStream);
             }
         }
 
