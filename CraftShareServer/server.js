@@ -45,11 +45,7 @@ var baseUrl = "/api";
 
 function handleError(error, response) {
     console.log("Error:", error);
-    if (error.name === "ValidationError") {
-        response.status(400).send({ error: "Validation error" });
-    } else {
-        response.status(500).send({ error: "Server error" });
-    }
+    response.status(error.name === "ValidationError" ? 400 : 500).end();
 }
 
 // GET craft list, without thumbnail and part list
@@ -68,6 +64,7 @@ app.get(baseUrl + "/craft/:id", function (request, response) {
     // query crafts from the database
     CraftModel.findById(request.params.id, function (error, objects) {
         if (error) return handleError(error, response);
+        if (!objects) return response.status(404).end();
         // return craft to the client
         response.send(objects);
     });
@@ -79,7 +76,7 @@ app.post(baseUrl + "/craft", function (request, response) {
     delete request.body._id;
     delete request.body.date;
     // create craft document
-    var object = new CraftModel("");
+    var object = new CraftModel(request.body);
     // save it to the database
     object.save(function (error) {
         if (error) return handleError(error, response);
