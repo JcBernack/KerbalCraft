@@ -1,6 +1,6 @@
 ﻿namespace CraftShareClient
 {
-    partial class Form1
+    partial class CraftShareForm
     {
         /// <summary>
         /// Required designer variable.
@@ -71,7 +71,7 @@
             this.textBox1.Size = new System.Drawing.Size(161, 20);
             this.textBox1.TabIndex = 3;
             // 
-            // Form1
+            // CraftShareForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
@@ -80,8 +80,8 @@
             this.Controls.Add(this.button3);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.button1);
-            this.Name = "Form1";
-            this.Text = "Form1";
+            this.Name = "CraftShareForm";
+            this.Text = "CraftShareForm";
             this.ResumeLayout(false);
             this.PerformLayout();
 

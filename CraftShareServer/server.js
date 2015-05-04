@@ -51,22 +51,27 @@ function handleError(error, response) {
 // GET craft list, without thumbnail and part list
 app.get(baseUrl + "/crafts", function (request, response) {
     //TODO: paging
-    // query crafts from the database
-    CraftModel.find(null, { craft: false, thumbnail: false }).sort({ date: "-1" }).limit(5).exec(function (error, objects) {
+    CraftModel.find(null, { craft: false, thumbnail: false, __v: false }).sort({ date: "-1" }).limit(15).exec(function (error, crafts) {
         if (error) return handleError(error, response);
-        // return crafts to the client
-        response.send(objects);
+        response.send(crafts);
     });
 });
 
-// GET craft data, including thumbnaul and part list
-app.get(baseUrl + "/craft/:id", function (request, response) {
-    // query crafts from the database
-    CraftModel.findById(request.params.id, function (error, objects) {
+// GET craft thumbnail
+app.get(baseUrl + "/thumbnail/:id", function (request, response) {
+    CraftModel.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
         if (error) return handleError(error, response);
-        if (!objects) return response.status(404).end();
-        // return craft to the client
-        response.send(objects);
+        if (!craft) return response.status(404).end();
+        response.send(craft.thumbnail);
+    });
+});
+
+// GET craft data
+app.get(baseUrl + "/craft/:id", function (request, response) {
+    CraftModel.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
+        if (error) return handleError(error, response);
+        if (!craft) return response.status(404).end();
+        response.send(craft.craft);
     });
 });
 
@@ -75,17 +80,13 @@ app.post(baseUrl + "/craft", function (request, response) {
     // prevent manipulating the _id or date field
     delete request.body._id;
     delete request.body.date;
-    // create craft document
-    var object = new CraftModel(request.body);
-    // save it to the database
-    object.save(function (error) {
+    // create craft document and save it to the database
+    CraftModel.create(request.body, function(error, craft) {
         if (error) return handleError(error, response);
         // return it back to client on success with updated fields like _id and date
-        response.send(object);
+        response.send(craft);
     });
 });
-
-//TODO: remove __v from response { __v: 0 }
 
 // start the server
 var port = process.env.PORT || 8000;
