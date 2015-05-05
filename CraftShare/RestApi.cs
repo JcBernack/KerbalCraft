@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Net;
 using RestSharp;
@@ -26,12 +27,21 @@ namespace CraftShare
             };
         }
 
+        private static void ThrowOnError(IRestResponse response)
+        {
+            if (response.ErrorException != null)
+            {
+                throw new Exception("Request failed", response.ErrorException);
+            }
+        }
+
         public static List<SharedCraft> GetCraftList(int skip, int limit)
         {
             var request = CreateRequest("craft/", Method.GET);
             request.AddQueryParameter("skip", skip.ToString());
             request.AddQueryParameter("limit", limit.ToString());
             var response = _client.Execute<List<SharedCraft>>(request);
+            ThrowOnError(response);
             return response.Data;
         }
 
@@ -39,21 +49,26 @@ namespace CraftShare
         {
             var request = CreateRequest("craft/{id}", Method.GET);
             request.AddUrlSegment("id", id);
-            return _client.Execute<SharedCraft>(request).Data.craft;
+            var response = _client.Execute<SharedCraft>(request);
+            ThrowOnError(response);
+            return response.Data.craft;
         }
 
         public static SharedCraft CreateCraft(SharedCraft craft)
         {
             var request = CreateRequest("craft/", Method.POST);
             request.AddBody(craft);
-            return _client.Execute<SharedCraft>(request).Data;
+            var response = _client.Execute<SharedCraft>(request);
+            ThrowOnError(response);
+            return response.Data;
         }
 
         public static bool DeleteCraft(string id)
         {
             var request = CreateRequest("craft/" + id, Method.DELETE);
-            var status = _client.Execute(request).StatusCode;
-            return status == HttpStatusCode.OK || status == HttpStatusCode.NoContent;
+            var response = _client.Execute(request);
+            ThrowOnError(response);
+            return response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent;
         }
     }
 }

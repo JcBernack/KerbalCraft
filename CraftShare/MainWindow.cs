@@ -233,7 +233,11 @@ namespace CraftShare
             if (GUILayout.Button("Delete"))
             {
                 Debug.Log("CraftShare: deleting craft craft: " + _selectedCraft._id);
-                if (!RestApi.DeleteCraft(_selectedCraft._id))
+                try
+                {
+                    RestApi.DeleteCraft(_selectedCraft._id);
+                }
+                catch (Exception)
                 {
                     Debug.LogWarning("CraftShare: deletion failed");
                 }

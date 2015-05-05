@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 
 namespace CraftShare
 {
@@ -10,10 +11,11 @@ namespace CraftShare
         
         private MainWindow _window;
 
-        private ApplicationLauncherButton _launcherButton;
-
         public void Awake()
         {
+            // make sure the PluginData folder exists
+            Directory.CreateDirectory(ModGlobals.PluginDataPath);
+            // instantiate the main window of this mod
             _window = new MainWindow();
             // add a button to the application launcher
             if (ApplicationLauncher.Ready) AddLauncherButton();
@@ -22,7 +24,7 @@ namespace CraftShare
 
         private void AddLauncherButton()
         {
-            _launcherButton = ApplicationLauncher.Instance.AddModApplication(_window.Show, _window.Hide, null, null, null, null, VisibleInScenes, ModGlobals.TrollfaceTexture);
+            ApplicationLauncher.Instance.AddModApplication(_window.Show, _window.Hide, null, null, null, null, VisibleInScenes, ModGlobals.TrollfaceTexture);
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
         }
 
