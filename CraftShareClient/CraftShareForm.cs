@@ -30,7 +30,7 @@ namespace CraftShareClient
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var craft = RestApi.GetThumbnail(textBox1.Text);
+            var craft = RestApi.GetCraft(textBox1.Text);
         }
     }
 }

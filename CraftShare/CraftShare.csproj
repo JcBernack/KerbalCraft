@@ -48,13 +48,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AblageP.cs" />
+    <Compile Include="CLZF2.cs" />
+    <Compile Include="ModGlobals.cs" />
+    <Compile Include="CraftListMod.cs" />
     <Compile Include="GUITable.cs" />
     <Compile Include="MainWindow.cs" />
-    <Compile Include="CraftShareMod.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RestApi.cs" />
     <Compile Include="SharedCraft.cs" />
-    <Compile Include="ShareWindow.cs" />
+    <Compile Include="StringCompressor.cs" />
+    <Compile Include="WindowBase.cs" />
     <Compile Include="Window.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

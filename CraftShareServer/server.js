@@ -1,6 +1,7 @@
 ﻿var express = require("express");
 var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
+var compress = require("compression");
 
 mongoose.set("debug", true);
 mongoose.connect("localhost", "craftshare");
@@ -18,23 +19,25 @@ db.once("open", function () {
 var ObjectId = mongoose.Schema.Types.ObjectId;
 
 var CraftSchema = mongoose.Schema({
-    name: { type: String, required: true },
-    author: { type: String, required: true },
     date: { type: Date, default: Date.now },
-    craft: { type: String, required: true },
-    thumbnail: { type: String }
+    name: { type: String, required: true },
+    facility: { type: String, required: true },
+    author: { type: String, required: true },
+    craft: { type: String, required: true }
 });
 
 var CraftModel = mongoose.model("Craft", CraftSchema);
 
 // create express http server
 var app = express();
+app.use(compress());
 app.use(bodyParser.json());
 
 // add middleware to log all api requests to the console
 app.use(function(request, response, next) {
     // log http method and url
     console.log(request.method, request.originalUrl);
+    //console.log(request.headers);
     // log request body
     console.dir(request.body);
     next();
@@ -51,27 +54,37 @@ function handleError(error, response) {
 // GET craft list, without thumbnail and part list
 app.get(baseUrl + "/crafts", function (request, response) {
     //TODO: paging
-    CraftModel.find(null, { craft: false, thumbnail: false, __v: false }).sort({ date: "-1" }).limit(15).exec(function (error, crafts) {
+    CraftModel.find(null, { craft: false, __v: false }).sort({ date: "-1" }).limit(15).exec(function (error, crafts) {
         if (error) return handleError(error, response);
         response.send(crafts);
     });
 });
 
 // GET craft thumbnail
-app.get(baseUrl + "/thumbnail/:id", function (request, response) {
-    CraftModel.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
-        if (error) return handleError(error, response);
-        if (!craft) return response.status(404).end();
-        response.send(craft.thumbnail);
-    });
-});
+//app.get(baseUrl + "/thumbnail/:id", function (request, response) {
+//    CraftModel.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
+//        if (error) return handleError(error, response);
+//        if (!craft) return response.status(404).end();
+//        response.send(craft.thumbnail);
+//    });
+//});
 
 // GET craft data
 app.get(baseUrl + "/craft/:id", function (request, response) {
     CraftModel.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
         if (error) return handleError(error, response);
         if (!craft) return response.status(404).end();
-        response.send(craft.craft);
+        response.send(craft);
+    });
+});
+
+// DELETE craft
+app.delete(baseUrl + "/craft/:id", function (request, response) {
+    CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, __v: false } }, function (error, craft) {
+        if (error) return handleError(error, response);
+        if (!craft) return response.status(404).end();
+        response.send(craft);
+        //response.status(204).end();
     });
 });
 

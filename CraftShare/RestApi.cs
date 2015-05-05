@@ -13,19 +13,21 @@ namespace CraftShare
 
         private static WebRequest CreateRequest(string url)
         {
-            var request = WebRequest.Create(string.Format("http://{0}/api/{1}", HostAddress, url));
+            var request = (HttpWebRequest)WebRequest.Create(string.Format("http://{0}/api/{1}", HostAddress, url));
+            //request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
             request.Timeout = 2000;
+            request.ContentType = "application/json";
             return request;
         }
 
-        public static IList<SharedCraft> GetCraftList()
+        public static List<SharedCraft> GetCraftList()
         {
-            return Get<IList<SharedCraft>>("crafts/");
+            return Get<List<SharedCraft>>("crafts/");
         }
 
-        public static string GetThumbnail(string id)
+        public static string GetCraft(string id)
         {
-            return Get<string>("thumbnail/" + id);
+            return Get<SharedCraft>("craft/" + id).Craft;
         }
 
         public static SharedCraft CreateCraft(SharedCraft craft)
@@ -33,33 +35,65 @@ namespace CraftShare
             return Post(craft, "craft/");
         }
 
+        public static bool DeleteCraft(string id)
+        {
+            var status = Delete("craft/" + id);
+            return status == HttpStatusCode.OK;
+        }
+
         private static T Get<T>(string url)
         {
             var request = CreateRequest(url);
-            var jsonSerializer = new DataContractJsonSerializer(typeof(T));
-            using (var response = request.GetResponse())
+            request.Method = "GET";
+            using (var response = (HttpWebResponse)request.GetResponse())
             using (var inStream = response.GetResponseStream())
             {
                 if (inStream == null) return default(T);
+                var jsonSerializer = new DataContractJsonSerializer(typeof(T));
                 return (T)jsonSerializer.ReadObject(inStream);
             }
         }
 
-        private static T Post<T>(T craft, string url)
+        private static T Post<T>(T data, string url)
         {
             var request = CreateRequest(url);
             request.Method = "POST";
-            request.ContentType = "application/json";
             var jsonSerializer = new DataContractJsonSerializer(typeof(T));
             using (var outStream = request.GetRequestStream())
             {
-                jsonSerializer.WriteObject(outStream, craft);
+                jsonSerializer.WriteObject(outStream, data);
             }
-            using (var response = request.GetResponse())
+            using (var response = (HttpWebResponse)request.GetResponse())
             using (var stream = response.GetResponseStream())
             {
                 if (stream == null) return default(T);
                 return (T)jsonSerializer.ReadObject(stream);
+            }
+        }
+
+        //private static T Delete<T>(string url)
+        //{
+        //    var request = CreateRequest(url);
+        //    request.Method = "DELETE";
+        //    using (var response = (HttpWebResponse)request.GetResponse())
+        //    {
+        //        if (response.StatusCode == HttpStatusCode.NoContent) return default(T);
+        //        using (var inStream = response.GetResponseStream())
+        //        {
+        //            if (inStream == null) return default(T);
+        //            var jsonSerializer = new DataContractJsonSerializer(typeof(T));
+        //            return (T)jsonSerializer.ReadObject(inStream);
+        //        }
+        //    }
+        //}
+
+        private static HttpStatusCode Delete(string url)
+        {
+            var request = CreateRequest(url);
+            request.Method = "DELETE";
+            using (var response = (HttpWebResponse)request.GetResponse())
+            {
+                return response.StatusCode;
             }
         }
     }
