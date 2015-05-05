@@ -9,12 +9,11 @@ namespace CraftShare
         private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB;
         
         private MainWindow _window;
-        
+
         private ApplicationLauncherButton _launcherButton;
 
         public void Awake()
         {
-            Debug.Log("CraftListMod Awake");
             _window = new MainWindow();
             // add a button to the application launcher
             if (ApplicationLauncher.Ready) AddLauncherButton();

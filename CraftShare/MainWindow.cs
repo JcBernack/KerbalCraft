@@ -8,9 +8,13 @@ namespace CraftShare
     public class MainWindow
         : Window
     {
+        private const int LeftWidth = 600;
+        private const int RightWidth = 250;
         private List<SharedCraft> _craftList;
         private SharedCraft _selectedCraft;
-        
+
+        private string _tableMessage;
+
         private string _hostAddress;
         private string _authorName;
 
@@ -18,8 +22,9 @@ namespace CraftShare
         private string _editAuthorName;
         
         public MainWindow()
-            : base(50, 50, "CraftShare")
+            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, Screen.height / 4f, "CraftShare")
         {
+            _tableMessage = "List not loaded.";
             LoadConfig();
             RestApi.SetHostAddress(_hostAddress);
         }
@@ -66,6 +71,9 @@ namespace CraftShare
 
         private void UpdateCraftList()
         {
+            // make the window as small as possible again
+            Rect.width = 0;
+            Rect.height = 0;
             try
             {
                 _craftList = RestApi.GetCraftList();
@@ -75,12 +83,13 @@ namespace CraftShare
             {
                 Debug.LogError("CraftShare: failed to load craft list.");
                 Debug.LogException(ex);
+                _tableMessage = "Failed to load list.";
             }
         }
 
         private void DrawLeftSide()
         {
-            GUILayout.BeginVertical(GUILayout.Width(600));
+            GUILayout.BeginVertical(GUILayout.Width(LeftWidth));
             DrawTable();
             GUILayout.EndVertical();
         }
@@ -89,12 +98,12 @@ namespace CraftShare
         {
             if (_craftList == null)
             {
-                GUILayout.Label("List not loaded.");
+                GUILayout.Label(_tableMessage);
                 return;
             }
             if (_craftList.Count == 0)
             {
-                GUILayout.Label("No has shared anything :(");
+                GUILayout.Label("Nothing shared yet :(");
                 return;
             }
             var cells = new List<string>
@@ -104,7 +113,7 @@ namespace CraftShare
             var dimension = cells.Count;
             foreach (var craft in _craftList)
             {
-                cells.AddRange(new[] { craft.name, craft.facility, craft.author, craft.date.ToShortDateString() });
+                cells.AddRange(new[] { craft.name, craft.facility, craft.author, craft.date.ToLongDateString() });
             }
             var clickedCell = GUIHelper.Grid(dimension, false, cells);
             if (clickedCell > -1)
@@ -115,13 +124,15 @@ namespace CraftShare
 
         private void DrawRightSide()
         {
-            GUILayout.BeginVertical(GUILayout.Width(250));
+            GUILayout.BeginVertical(GUILayout.Width(RightWidth));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh list")) UpdateCraftList();
             if (GUILayout.Button("Share current craft")) ShareCurrentCraft();
             GUILayout.EndHorizontal();
+            GUILayout.Label("Settings", ModGlobals.HeadStyle);
             _editHostAddress = GUIUtil.EditableStringField("Host", _editHostAddress, OnHostAddressSubmit);
             _editAuthorName = GUIUtil.EditableStringField("Author", _editAuthorName, OnAuthorNameSubmit);
+            GUILayout.Label("Details", ModGlobals.HeadStyle);
             DrawCraftDetails();
             GUILayout.EndVertical();
         }
@@ -148,26 +159,24 @@ namespace CraftShare
 
         private void DrawCraftDetails()
         {
-            GUILayout.Label("Details:", ModGlobals.HeadStyle);
             if (_selectedCraft == null)
             {
                 GUILayout.Label("Nothing selected.");
                 return;
             }
-            GUILayout.Label(" == thumbnail todo ==");
             var cells = new[]
             {
-                "Name:", "Facility:", "Author:", "Date:", "Description:",
-                _selectedCraft.name, _selectedCraft.facility, _selectedCraft.author, _selectedCraft.date.ToLongDateString(), "todo"
+                "Name:", "Facility:", "Author:", "Date:",
+                _selectedCraft.name, _selectedCraft.facility, _selectedCraft.author, _selectedCraft.date.ToLongDateString()
             };
-            GUIHelper.Grid(5, true, cells);
+            GUIHelper.Grid(4, true, cells);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Delete"))
             {
                 Debug.Log("CraftShare: deleting craft craft: " + _selectedCraft._id);
                 if (!RestApi.DeleteCraft(_selectedCraft._id))
                 {
-                    Debug.Log("CraftShare: deletion failed");
+                    Debug.LogWarning("CraftShare: deletion failed");
                 }
                 _selectedCraft = null;
                 UpdateCraftList();
@@ -193,8 +202,13 @@ namespace CraftShare
         private void ShareCurrentCraft()
         {
             var ship = EditorLogic.fetch.ship;
+            if (ship.Count == 0) return;
+            if (ship.shipName.Length == 0) return;
+            if (_authorName.Length == 0) return;
+            // save current craft to file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "upload.craft");
             ship.SaveShip().Save(craftPath);
+            // create transfer object including compressed content of the craft file
             var shared = new SharedCraft
             {
                 name = ship.shipName,
@@ -204,17 +218,18 @@ namespace CraftShare
             };
             try
             {
-                // upload the ship
+                // upload the craft
+                Debug.Log("CraftShare: uploading craft");
                 shared = RestApi.CreateCraft(shared);
                 Debug.Log("CraftShare: new shared craft ID: " + shared._id);
+                // refresh list to reflect the new entry
+                UpdateCraftList();
             }
             catch(Exception ex)
             {
                 Debug.LogError("CraftShare: sharing craft failed");
                 Debug.LogException(ex);
             }
-            // refresh list to show the new entry
-            UpdateCraftList();
         }
     }
 }

@@ -3,7 +3,7 @@ var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
 var compress = require("compression");
 
-mongoose.set("debug", true);
+//mongoose.set("debug", true);
 mongoose.connect("localhost", "craftshare");
 
 var db = mongoose.connection;
@@ -37,17 +37,21 @@ app.use(bodyParser.json());
 app.use(function(request, response, next) {
     // log http method and url
     console.log(request.method, request.originalUrl);
-    console.log(request.headers);
+    //console.log(request.headers);
     // log request body
-    console.dir(request.body);
+    //console.dir(request.body);
     next();
 });
 
 // define rest routes
 var baseUrl = "/api";
 
+process.on("uncaughtException", function (error) {
+    console.log("Caught exception: " + error);
+});
+
 function handleError(error, response) {
-    console.error("Error:", error);
+    console.log("Error:", error);
     response.status(error.name === "ValidationError" ? 400 : 500).end();
 }
 
