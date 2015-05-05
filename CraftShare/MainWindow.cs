@@ -25,6 +25,8 @@ namespace CraftShare
         private int _pageLimit = 20;
         private int _pageLength;
         
+        private bool _inputsLocked;
+
         public MainWindow()
             : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, Screen.height / 4f, "CraftShare")
         {
@@ -71,6 +73,7 @@ namespace CraftShare
             DrawRightSide();
             GUILayout.EndHorizontal();
             GUI.DragWindow();
+            PreventEditorClickthrough();
         }
 
         private void ResetWindow()
@@ -292,6 +295,21 @@ namespace CraftShare
             {
                 Debug.LogError("CraftShare: sharing craft failed");
                 Debug.LogException(ex);
+            }
+        }
+        
+        private void PreventEditorClickthrough()
+        {
+            var mouseOverWindow = Rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
+            if (!_inputsLocked && mouseOverWindow)
+            {
+                EditorLogic.fetch.Lock(true, true, true, "CraftShare_noclick");
+                _inputsLocked = true;
+            }
+            if (_inputsLocked && !mouseOverWindow)
+            {
+                EditorLogic.fetch.Unlock("CraftShare_noclick");
+                _inputsLocked = false;
             }
         }
     }
