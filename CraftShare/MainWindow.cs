@@ -177,6 +177,12 @@ namespace CraftShare
         private void DrawRightSide()
         {
             GUILayout.BeginVertical(GUILayout.Width(RightWidth));
+            GUILayout.Label("Details", ModGlobals.HeadStyle);
+            DrawCraftDetails();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label("Settings", ModGlobals.HeadStyle);
+            _editHostAddress = GUIUtil.EditableStringField("Host", _editHostAddress, OnHostAddressSubmit);
+            _editAuthorName = GUIUtil.EditableStringField("Author", _editAuthorName, OnAuthorNameSubmit);
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh list"))
             {
@@ -185,11 +191,6 @@ namespace CraftShare
             }
             if (GUILayout.Button("Share current craft")) ShareCurrentCraft();
             GUILayout.EndHorizontal();
-            GUILayout.Label("Settings", ModGlobals.HeadStyle);
-            _editHostAddress = GUIUtil.EditableStringField("Host", _editHostAddress, OnHostAddressSubmit);
-            _editAuthorName = GUIUtil.EditableStringField("Author", _editAuthorName, OnAuthorNameSubmit);
-            GUILayout.Label("Details", ModGlobals.HeadStyle);
-            DrawCraftDetails();
             GUILayout.EndVertical();
         }
 
@@ -220,7 +221,6 @@ namespace CraftShare
             if (_selectedCraft == null)
             {
                 GUILayout.Label("Nothing selected.");
-                GUILayout.FlexibleSpace();
                 return;
             }
             var cells = new[]
@@ -229,7 +229,6 @@ namespace CraftShare
                 _selectedCraft.name, _selectedCraft.facility, _selectedCraft.author, _selectedCraft.date.ToLongDateString()
             };
             GUIHelper.Grid(4, true, cells);
-            GUILayout.FlexibleSpace();
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Delete"))
             {
