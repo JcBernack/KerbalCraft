@@ -8,12 +8,13 @@ namespace CraftShare
     public class MainWindow
         : Window
     {
-        private const int LeftWidth = 600;
+        private const int LeftWidth = 400;
         private const int RightWidth = 250;
         private List<SharedCraft> _craftList;
         private SharedCraft _selectedCraft;
 
         private string _tableMessage;
+        private Texture2D _thumbnail;
 
         private string _hostAddress;
         private string _authorName;
@@ -58,6 +59,12 @@ namespace CraftShare
             config.AddValue("HostAddress", _hostAddress);
             config.AddValue("AuthorName", _authorName);
             config.Save(ModGlobals.ConfigPath);
+        }
+
+        protected override void Initialize()
+        {
+            ModGlobals.InitializeGUI();
+            _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
         }
 
         protected override void OnShow()
@@ -126,7 +133,7 @@ namespace CraftShare
             // add table headers
             var cells = new List<string>
             {
-                "Name", "Facility", "Author", "Date"
+                "Name", "Facility", "Author"
             };
             var dimension = cells.Count;
             if (_pageLength == 0)
@@ -138,7 +145,7 @@ namespace CraftShare
                 // add table data
                 foreach (var craft in _craftList)
                 {
-                    cells.AddRange(new[] {craft.name, craft.facility, craft.author, craft.date.ToLongDateString()});
+                    cells.AddRange(new[] { craft.name, craft.facility, craft.author });
                 }
             }
             // draw table
@@ -146,35 +153,40 @@ namespace CraftShare
             // handle clicks on table cells
             if (_pageLength > 0 && clickedCell > -1)
             {
-                _selectedCraft = _craftList[clickedCell / dimension - 1];
+                SelectCraft(_craftList[clickedCell / dimension - 1]);
             }
             // draw paging controls at the bottom of the window
             GUILayout.FlexibleSpace();
             GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip, _pageSkip + _pageLimit));
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("<<"))
-            {
-                _pageSkip -= _pageLimit*5;
-                if (_pageSkip < 0) _pageSkip = 0;
-                UpdateCraftList();
-            }
-            if (GUILayout.Button("<"))
+            if (GUILayout.Button("Prev page"))
             {
                 _pageSkip -= _pageLimit;
                 if (_pageSkip < 0) _pageSkip = 0;
                 UpdateCraftList();
             }
-            if (GUILayout.Button(">"))
+            if (GUILayout.Button("Next page"))
             {
                 _pageSkip += _pageLimit;
                 UpdateCraftList();
             }
-            if (GUILayout.Button(">>"))
-            {
-                _pageSkip += _pageLimit*5;
-                UpdateCraftList();
-            }
             GUILayout.EndHorizontal();
+        }
+
+        private void SelectCraft(SharedCraft craft)
+        {
+            _selectedCraft = craft;
+            if (string.IsNullOrEmpty(_selectedCraft.thumbnail)) return;
+            try
+            {
+                var bytes = BinaryCompressor.Decompress(_selectedCraft.thumbnail);
+                _thumbnail.LoadImage(bytes);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning("CraftShare: unable to parse thumbnail");
+                Debug.LogException(ex);
+            }
         }
 
         private void DrawRightSide()
@@ -226,6 +238,9 @@ namespace CraftShare
                 GUILayout.Label("Nothing selected.");
                 return;
             }
+            // draw thumbnail or icon
+            GUILayout.Box(string.IsNullOrEmpty(_selectedCraft.thumbnail) ? ModGlobals.IconLarge : _thumbnail);
+            // draw details table
             var cells = new[]
             {
                 "Name:", "Facility:", "Author:", "Date:",
@@ -233,6 +248,7 @@ namespace CraftShare
             };
             GUIHelper.Grid(4, true, cells);
             GUILayout.BeginHorizontal();
+            // draw delete button
             if (GUILayout.Button("Delete"))
             {
                 Debug.Log("CraftShare: deleting craft craft: " + _selectedCraft._id);
@@ -247,7 +263,12 @@ namespace CraftShare
                 _selectedCraft = null;
                 UpdateCraftList();
             }
-            if (GUILayout.Button("Load"))
+            // merge is only available when there something in the editor to merge into
+            var merge = false;
+            if (EditorLogic.fetch.ship.Count > 0) merge = GUILayout.Button("Merge");
+            // load is always available
+            var load = GUILayout.Button("Load");
+            if (merge || load)
             {
                 if (string.IsNullOrEmpty(_selectedCraft.craft))
                 {
@@ -260,7 +281,15 @@ namespace CraftShare
                 var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
                 File.WriteAllText(craftPath, _selectedCraft.craft);
                 Debug.Log("CraftShare: craft written to: " + craftPath);
-                EditorLogic.LoadShipFromFile(craftPath);
+                if (merge)
+                {
+                    var ship = ShipConstruction.LoadShip(craftPath);
+                    EditorLogic.fetch.SpawnConstruct(ship);
+                }
+                if (load)
+                {
+                    EditorLogic.LoadShipFromFile(craftPath);
+                }
             }
             GUILayout.EndHorizontal();
         }
@@ -268,19 +297,23 @@ namespace CraftShare
         private void ShareCurrentCraft()
         {
             var ship = EditorLogic.fetch.ship;
+            //TODO: check if ship.Count also contains unattached parts
             if (ship.Count == 0) return;
             if (ship.shipName.Length == 0) return;
             if (_authorName.Length == 0) return;
             // save current craft to file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "upload.craft");
             ship.SaveShip().Save(craftPath);
+            // read the thumbnail
+            var bytes = File.ReadAllBytes(ModGlobals.GetCraftThumbnailPath(ship));
             // create transfer object including compressed content of the craft file
             var shared = new SharedCraft
             {
                 name = ship.shipName,
                 facility = ship.shipFacility.ToString(),
                 author = _authorName,
-                craft = StringCompressor.Compress(File.ReadAllText(craftPath))
+                craft = StringCompressor.Compress(File.ReadAllText(craftPath)),
+                thumbnail = BinaryCompressor.Compress(bytes)
             };
             try
             {

@@ -20,7 +20,6 @@ namespace CraftShare
 
         private void OnGUI()
         {
-            GUI.skin = HighLogic.Skin;
             if (!Initialized)
             {
                 Initialized = true;

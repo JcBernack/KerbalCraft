@@ -23,7 +23,8 @@ var CraftSchema = mongoose.Schema({
     name: { type: String, required: true },
     facility: { type: String, required: true },
     author: { type: String, required: true },
-    craft: { type: String, required: true }
+    craft: { type: String, required: true },
+    thumbnail: { type: String }
 });
 
 var CraftModel = mongoose.model("Craft", CraftSchema);
@@ -86,7 +87,7 @@ router.get("/craft/:id", function (request, response) {
 
 // DELETE craft
 router.delete("/craft/:id", function (request, response) {
-    CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, __v: false } }, function (error, craft) {
+    CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, thumbnail: false, __v: false } }, function (error, craft) {
         if (error) return handleError(error, response);
         if (!craft) return response.status(404).end();
         response.status(204).end();

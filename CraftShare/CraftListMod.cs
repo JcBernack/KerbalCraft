@@ -15,6 +15,8 @@ namespace CraftShare
         {
             // make sure the PluginData folder exists
             Directory.CreateDirectory(ModGlobals.PluginDataPath);
+            // initialize globally used objects
+            ModGlobals.Initialize();
             // instantiate the main window of this mod
             _window = new MainWindow();
             // add a button to the application launcher
@@ -24,7 +26,7 @@ namespace CraftShare
 
         private void AddLauncherButton()
         {
-            ApplicationLauncher.Instance.AddModApplication(_window.Show, _window.Hide, null, null, null, null, VisibleInScenes, ModGlobals.TrollfaceTexture);
+            ApplicationLauncher.Instance.AddModApplication(_window.Show, _window.Hide, null, null, null, null, VisibleInScenes, ModGlobals.IconSmall);
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
         }
 

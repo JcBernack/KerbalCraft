@@ -10,5 +10,6 @@ namespace CraftShare
         public string facility { get; set; }
         public string author { get; set; }
         public string craft { get; set; }
+        public string thumbnail { get; set; }
     }
 }
