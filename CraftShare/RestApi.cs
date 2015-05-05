@@ -9,12 +9,11 @@ namespace CraftShare
     /// </summary>
     public static class RestApi
     {
-        public static string HostAddress = "localhost:8000";
-        private static readonly RestClient Client;
+        private static RestClient _client;
 
-        static RestApi()
+        public static void SetHostAddress(string host)
         {
-            Client = new RestClient(string.Format("http://{0}/api/", HostAddress));
+            _client = new RestClient(string.Format("http://{0}/api/", host));
         }
 
         private static RestRequest CreateRequest(string ressource, Method method)
@@ -22,34 +21,35 @@ namespace CraftShare
             return new RestRequest(ressource, method)
             {
                 Timeout = 2000,
-                RequestFormat = DataFormat.Json
+                RequestFormat = DataFormat.Json,
+                DateFormat = "yyyy-MM-ddTHH:mm:ss.fffZ"
             };
         }
 
         public static List<SharedCraft> GetCraftList()
         {
             var request = CreateRequest("crafts/", Method.GET);
-            return Client.Execute<List<SharedCraft>>(request).Data;
+            return _client.Execute<List<SharedCraft>>(request).Data;
         }
 
         public static string GetCraft(string id)
         {
             var request = CreateRequest("craft/{id}", Method.GET);
             request.AddUrlSegment("id", id);
-            return Client.Execute<SharedCraft>(request).Data.craft;
+            return _client.Execute<SharedCraft>(request).Data.craft;
         }
 
         public static SharedCraft CreateCraft(SharedCraft craft)
         {
             var request = CreateRequest("craft/", Method.POST);
             request.AddBody(craft);
-            return Client.Execute<SharedCraft>(request).Data;
+            return _client.Execute<SharedCraft>(request).Data;
         }
 
         public static bool DeleteCraft(string id)
         {
             var request = CreateRequest("craft/" + id, Method.DELETE);
-            var status = Client.Execute(request).StatusCode;
+            var status = _client.Execute(request).StatusCode;
             return status == HttpStatusCode.OK || status == HttpStatusCode.NoContent;
         }
     }

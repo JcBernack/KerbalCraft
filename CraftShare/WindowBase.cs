@@ -9,11 +9,13 @@ namespace CraftShare
         public void Show()
         {
             RenderingManager.AddToPostDrawQueue(0, OnGUI);
+            OnShow();
         }
 
         public void Hide()
         {
             RenderingManager.RemoveFromPostDrawQueue(0, OnGUI);
+            OnHide();
         }
 
         private void OnGUI()
@@ -28,6 +30,8 @@ namespace CraftShare
         }
 
         protected virtual void Initialize() { }
+        protected virtual void OnShow() { }
+        protected virtual void OnHide() { }
 
         protected abstract void DrawGUI();
     }

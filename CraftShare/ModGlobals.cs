@@ -1,10 +1,12 @@
-﻿using UnityEngine;
+﻿using System.IO;
+using UnityEngine;
 
 namespace CraftShare
 {
     public static class ModGlobals
     {
         public static string PluginDataPath = "GameData/CraftShare/PluginData/";
+        public static string ConfigPath = Path.Combine(PluginDataPath, "config.cfg");
 
         public static Texture2D TransparentTexture;
         public static Texture2D TrollfaceTexture;

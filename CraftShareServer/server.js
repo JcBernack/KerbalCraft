@@ -54,7 +54,7 @@ function handleError(error, response) {
 // GET craft list, without thumbnail and part list
 app.get(baseUrl + "/crafts", function (request, response) {
     //TODO: paging
-    CraftModel.find(null, { craft: false, __v: false }).sort({ date: "-1" }).limit(15).exec(function (error, crafts) {
+    CraftModel.find(null, { craft: false, __v: false }).sort({ date: "-1" }).limit(20).exec(function (error, crafts) {
         if (error) return handleError(error, response);
         response.send(crafts);
     });
