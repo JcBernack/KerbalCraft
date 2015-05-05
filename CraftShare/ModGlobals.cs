@@ -19,13 +19,15 @@ namespace CraftShare
             TransparentTexture.Apply();
             // load trollface
             TrollfaceTexture = GameDatabase.Instance.GetTexture("CraftShare/Data/ModButton", false);
-
+            // define gui styles for table headers and rows
             HeadStyle = new GUIStyle(HighLogic.Skin.label)
             {
                 fontStyle = FontStyle.Bold,
+                wordWrap = false
             };
             RowStyle = new GUIStyle(HighLogic.Skin.label)
             {
+                wordWrap = false,
                 hover =
                 {
                     background = TransparentTexture,

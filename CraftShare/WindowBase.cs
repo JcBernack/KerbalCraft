@@ -21,8 +21,8 @@ namespace CraftShare
             GUI.skin = HighLogic.Skin;
             if (!Initialized)
             {
-                Initialize();
                 Initialized = true;
+                Initialize();
             }
             DrawGUI();
         }

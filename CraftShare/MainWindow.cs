@@ -49,7 +49,7 @@ namespace CraftShare
 
         private void DrawCraftList()
         {
-            GUILayout.BeginVertical(GUILayout.Width(500));
+            GUILayout.BeginVertical(GUILayout.Width(600));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh list")) UpdateCraftList();
             if (GUILayout.Button("Share current craft")) ShareCurrentCraft();
@@ -73,7 +73,7 @@ namespace CraftShare
             _table.ClearRows();
             foreach (var craft in _craftList)
             {
-                _table.AddRow(craft.Name, craft.Facility, craft.Author, craft.Date);
+                _table.AddRow(craft.name, craft.facility, craft.author, craft.date);
             }
             int clickedRow;
             if (_table.Render(out clickedRow))
@@ -94,47 +94,41 @@ namespace CraftShare
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.BeginVertical();
-                GUILayout.Label("(ID):");
+                //GUILayout.Label("(ID):");
                 GUILayout.Label("Name:");
                 GUILayout.Label("Facility:");
                 GUILayout.Label("Author:");
                 GUILayout.Label("Date:");
+                GUILayout.Label("Description:");
                 GUILayout.EndVertical();
                 GUILayout.BeginVertical();
-                GUILayout.Label(_selectedCraft.Id);
-                GUILayout.Label(_selectedCraft.Name);
-                GUILayout.Label(_selectedCraft.Facility);
-                GUILayout.Label(_selectedCraft.Author);
-                GUILayout.Label(_selectedCraft.Date);
+                //GUILayout.Label(_selectedCraft._id);
+                GUILayout.Label(_selectedCraft.name);
+                GUILayout.Label(_selectedCraft.facility);
+                GUILayout.Label(_selectedCraft.author);
+                GUILayout.Label(_selectedCraft.date);
+                GUILayout.Label("todo");
                 GUILayout.EndVertical();
                 GUILayout.EndHorizontal();
                 if (GUILayout.Button("Delete"))
                 {
-                    RestApi.DeleteCraft(_selectedCraft.Id);
+                    RestApi.DeleteCraft(_selectedCraft._id);
                     UpdateCraftList();
                 }
                 if (GUILayout.Button("Load"))
                 {
-                    if (string.IsNullOrEmpty(_selectedCraft.Craft))
+                    if (string.IsNullOrEmpty(_selectedCraft.craft))
                     {
-                        _selectedCraft.Craft = RestApi.GetCraft(_selectedCraft.Id);
-                        _selectedCraft.Craft = StringCompressor.Decompress(_selectedCraft.Craft);
-                        Debug.Log("CraftShare: craft characters loaded: " + _selectedCraft.Craft.Length);
+                        Debug.Log("CraftShare: loading craft: " + _selectedCraft._id);
+                        _selectedCraft.craft = RestApi.GetCraft(_selectedCraft._id);
+                        _selectedCraft.craft = StringCompressor.Decompress(_selectedCraft.craft);
+                        Debug.Log("CraftShare: craft characters loaded: " + _selectedCraft.craft.Length);
                     }
                     //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
-                    var craftPath = Path.Combine(ModGlobals.PluginDataPath, "tmp.craft");
-                    //var craftPath = GetCraftPath(_selectedCraft.Facility, _selectedCraft.Name);
-                    File.WriteAllText(craftPath, _selectedCraft.Craft);
+                    var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
+                    File.WriteAllText(craftPath, _selectedCraft.craft);
                     Debug.Log("CraftShare: craft written to: " + craftPath);
-                    
-                    //var configNode = ConfigNode.Load(tmpCraftFile);
-                    //EditorLogic.fetch.ship.LoadShip(configNode);
-                    //EditorLogic.fetch.ship = ShipConstruction.LoadShip(tmpCraftFile);
-                    
                     EditorLogic.LoadShipFromFile(craftPath);
-
-                    //var ship = ShipConstruction.LoadShip(Path.Combine(ModGlobals.PluginDataPath, "tmp.craft"));
-                    //ship.SaveShip().Save(GetCraftPath(ship.shipFacility.ToString(), ship.shipName));
                 }
             }
             GUILayout.EndVertical();
@@ -147,16 +141,16 @@ namespace CraftShare
             ship.SaveShip().Save(craftPath);
             var shared = new SharedCraft
             {
-                Name = ship.shipName,
-                Facility = ship.shipFacility.ToString(),
-                Author = "Fettsack",
-                Craft = StringCompressor.Compress(File.ReadAllText(craftPath))
+                name = ship.shipName,
+                facility = ship.shipFacility.ToString(),
+                author = "Fettsack",
+                craft = StringCompressor.Compress(File.ReadAllText(craftPath))
             };
             try
             {
                 // upload
                 shared = RestApi.CreateCraft(shared);
-                Debug.Log("CraftShare: new shared craft ID: " + shared.Id);
+                Debug.Log("CraftShare: new shared craft ID: " + shared._id);
             }
             catch(Exception ex)
             {
@@ -165,16 +159,6 @@ namespace CraftShare
             }
             // refresh list to show the new entry
             UpdateCraftList();
-        }
-
-        public static string GetCraftPath(string facility, string name)
-        {
-            return string.Format("saves/{0}/Ships/{1}/{2}.craft", HighLogic.SaveFolder, facility, name);
-        }
-
-        public static string GetCraftThumbnailPath(string facility, string name)
-        {
-            return string.Format("thumbs/{0}_{1}_{2}.png", HighLogic.SaveFolder, facility, name);
         }
     }
 }

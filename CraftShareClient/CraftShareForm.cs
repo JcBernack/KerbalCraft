@@ -21,9 +21,10 @@ namespace CraftShareClient
         {
             var craft = new SharedCraft
             {
-                Name = "Trollcraft",
-                Author = "Client app",
-                Craft = "lots of parts.."
+                name = "Trollcraft",
+                facility = "VAB",
+                author = "Client app",
+                craft = "lots of parts.."
             };
             craft = RestApi.CreateCraft(craft);
         }

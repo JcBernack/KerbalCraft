@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Net;
-using System.Runtime.Serialization.Json;
+using RestSharp;
 
 namespace CraftShare
 {
@@ -10,91 +10,47 @@ namespace CraftShare
     public static class RestApi
     {
         public static string HostAddress = "localhost:8000";
+        private static readonly RestClient Client;
 
-        private static WebRequest CreateRequest(string url)
+        static RestApi()
         {
-            var request = (HttpWebRequest)WebRequest.Create(string.Format("http://{0}/api/{1}", HostAddress, url));
-            //request.AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate;
-            request.Timeout = 2000;
-            request.ContentType = "application/json";
-            return request;
+            Client = new RestClient(string.Format("http://{0}/api/", HostAddress));
+        }
+
+        private static RestRequest CreateRequest(string ressource, Method method)
+        {
+            return new RestRequest(ressource, method)
+            {
+                Timeout = 2000,
+                RequestFormat = DataFormat.Json
+            };
         }
 
         public static List<SharedCraft> GetCraftList()
         {
-            return Get<List<SharedCraft>>("crafts/");
+            var request = CreateRequest("crafts/", Method.GET);
+            return Client.Execute<List<SharedCraft>>(request).Data;
         }
 
         public static string GetCraft(string id)
         {
-            return Get<SharedCraft>("craft/" + id).Craft;
+            var request = CreateRequest("craft/{id}", Method.GET);
+            request.AddUrlSegment("id", id);
+            return Client.Execute<SharedCraft>(request).Data.craft;
         }
 
         public static SharedCraft CreateCraft(SharedCraft craft)
         {
-            return Post(craft, "craft/");
+            var request = CreateRequest("craft/", Method.POST);
+            request.AddBody(craft);
+            return Client.Execute<SharedCraft>(request).Data;
         }
 
         public static bool DeleteCraft(string id)
         {
-            var status = Delete("craft/" + id);
-            return status == HttpStatusCode.OK;
-        }
-
-        private static T Get<T>(string url)
-        {
-            var request = CreateRequest(url);
-            request.Method = "GET";
-            using (var response = (HttpWebResponse)request.GetResponse())
-            using (var inStream = response.GetResponseStream())
-            {
-                if (inStream == null) return default(T);
-                var jsonSerializer = new DataContractJsonSerializer(typeof(T));
-                return (T)jsonSerializer.ReadObject(inStream);
-            }
-        }
-
-        private static T Post<T>(T data, string url)
-        {
-            var request = CreateRequest(url);
-            request.Method = "POST";
-            var jsonSerializer = new DataContractJsonSerializer(typeof(T));
-            using (var outStream = request.GetRequestStream())
-            {
-                jsonSerializer.WriteObject(outStream, data);
-            }
-            using (var response = (HttpWebResponse)request.GetResponse())
-            using (var stream = response.GetResponseStream())
-            {
-                if (stream == null) return default(T);
-                return (T)jsonSerializer.ReadObject(stream);
-            }
-        }
-
-        //private static T Delete<T>(string url)
-        //{
-        //    var request = CreateRequest(url);
-        //    request.Method = "DELETE";
-        //    using (var response = (HttpWebResponse)request.GetResponse())
-        //    {
-        //        if (response.StatusCode == HttpStatusCode.NoContent) return default(T);
-        //        using (var inStream = response.GetResponseStream())
-        //        {
-        //            if (inStream == null) return default(T);
-        //            var jsonSerializer = new DataContractJsonSerializer(typeof(T));
-        //            return (T)jsonSerializer.ReadObject(inStream);
-        //        }
-        //    }
-        //}
-
-        private static HttpStatusCode Delete(string url)
-        {
-            var request = CreateRequest(url);
-            request.Method = "DELETE";
-            using (var response = (HttpWebResponse)request.GetResponse())
-            {
-                return response.StatusCode;
-            }
+            var request = CreateRequest("craft/" + id, Method.DELETE);
+            var status = Client.Execute(request).StatusCode;
+            return status == HttpStatusCode.OK || status == HttpStatusCode.NoContent;
         }
     }
 }

@@ -35,6 +35,16 @@ namespace CraftShare
             }
         }
 
+        public static string GetCraftPath(string facility, string name)
+        {
+            return string.Format("saves/{0}/Ships/{1}/{2}.craft", HighLogic.SaveFolder, facility, name);
+        }
+
+        public static string GetCraftThumbnailPath(string facility, string name)
+        {
+            return string.Format("thumbs/{0}_{1}_{2}.png", HighLogic.SaveFolder, facility, name);
+        }
+
         public class ShareWindow
         : WindowBase
         {

@@ -30,14 +30,14 @@ var CraftModel = mongoose.model("Craft", CraftSchema);
 
 // create express http server
 var app = express();
-app.use(compress());
+//app.use(compress());
 app.use(bodyParser.json());
 
 // add middleware to log all api requests to the console
 app.use(function(request, response, next) {
     // log http method and url
     console.log(request.method, request.originalUrl);
-    //console.log(request.headers);
+    console.log(request.headers);
     // log request body
     console.dir(request.body);
     next();
@@ -47,7 +47,7 @@ app.use(function(request, response, next) {
 var baseUrl = "/api";
 
 function handleError(error, response) {
-    console.log("Error:", error);
+    console.error("Error:", error);
     response.status(error.name === "ValidationError" ? 400 : 500).end();
 }
 
@@ -59,15 +59,6 @@ app.get(baseUrl + "/crafts", function (request, response) {
         response.send(crafts);
     });
 });
-
-// GET craft thumbnail
-//app.get(baseUrl + "/thumbnail/:id", function (request, response) {
-//    CraftModel.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
-//        if (error) return handleError(error, response);
-//        if (!craft) return response.status(404).end();
-//        response.send(craft.thumbnail);
-//    });
-//});
 
 // GET craft data
 app.get(baseUrl + "/craft/:id", function (request, response) {
@@ -83,8 +74,7 @@ app.delete(baseUrl + "/craft/:id", function (request, response) {
     CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, __v: false } }, function (error, craft) {
         if (error) return handleError(error, response);
         if (!craft) return response.status(404).end();
-        response.send(craft);
-        //response.status(204).end();
+        response.status(204).end();
     });
 });
 
