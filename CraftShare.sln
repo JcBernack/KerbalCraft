@@ -9,6 +9,11 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "CraftShareServer", "CraftSh
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CraftShareClient", "CraftShareClient\CraftShareClient.csproj", "{9ACABC73-2459-4CA6-9AEF-23912428A920}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Documents", "Documents", "{259E3B9A-8CD7-45C7-892A-629AAB25E1C4}"
+	ProjectSection(SolutionItems) = preProject
+		todo.txt = todo.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

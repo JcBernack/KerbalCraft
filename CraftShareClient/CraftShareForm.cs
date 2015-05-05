@@ -10,11 +10,12 @@ namespace CraftShareClient
         public CraftShareForm()
         {
             InitializeComponent();
+            RestApi.SetHostAddress("localhost:8000");
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var crafts = RestApi.GetCraftList();
+            var crafts = RestApi.GetCraftList(20, 5);
         }
 
         private void button2_Click(object sender, EventArgs e)

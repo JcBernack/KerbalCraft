@@ -1,0 +1,8 @@
+# Bugs
+Mongoose throws uncaught exception when a validation error occurs
+Express returns uncool error messages to the client when a url argument can not be parsed, e.g. caused by invalid characters like !"§$%
+
+# Todo
+Everyone likes thumbnails
+More details about the ships in the list
+User handling with authentication etc.

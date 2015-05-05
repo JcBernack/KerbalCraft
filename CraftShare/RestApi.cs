@@ -26,10 +26,13 @@ namespace CraftShare
             };
         }
 
-        public static List<SharedCraft> GetCraftList()
+        public static List<SharedCraft> GetCraftList(int skip, int limit)
         {
-            var request = CreateRequest("crafts/", Method.GET);
-            return _client.Execute<List<SharedCraft>>(request).Data;
+            var request = CreateRequest("craft/", Method.GET);
+            request.AddQueryParameter("skip", skip.ToString());
+            request.AddQueryParameter("limit", limit.ToString());
+            var response = _client.Execute<List<SharedCraft>>(request);
+            return response.Data;
         }
 
         public static string GetCraft(string id)

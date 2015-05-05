@@ -43,9 +43,6 @@ app.use(function(request, response, next) {
     next();
 });
 
-// define rest routes
-var baseUrl = "/api";
-
 process.on("uncaughtException", function (error) {
     console.log("Caught exception: " + error);
 });
@@ -55,17 +52,31 @@ function handleError(error, response) {
     response.status(error.name === "ValidationError" ? 400 : 500).end();
 }
 
+// define REST routes
+var router = express.Router();
+
+function queryInt(request, name, standard, min, max) {
+    if (!request.query.hasOwnProperty(name)) return standard;
+    var value = parseInt(request.query[name]);
+    if (isNaN(value)) value = standard;
+    if (value < min) value = min;
+    if (value > max) value = max;
+    return value;
+}
+
 // GET craft list, without thumbnail and part list
-app.get(baseUrl + "/crafts", function (request, response) {
-    //TODO: paging
-    CraftModel.find(null, { craft: false, __v: false }).sort({ date: "-1" }).limit(20).exec(function (error, crafts) {
+router.get("/craft", function (request, response) {
+    var skip = queryInt(request, "skip", 0, 0, Number.MAX_VALUE);
+    var limit = queryInt(request, "limit", 20, 1, 50);
+    CraftModel.find(null, { craft: false, __v: false }, { sort: { date: -1 }, skip: skip, limit: limit }, function (error, crafts) {
         if (error) return handleError(error, response);
+        if (!crafts || crafts.length < 1) return response.status(404).end();
         response.send(crafts);
     });
 });
 
 // GET craft data
-app.get(baseUrl + "/craft/:id", function (request, response) {
+router.get("/craft/:id", function (request, response) {
     CraftModel.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
         if (error) return handleError(error, response);
         if (!craft) return response.status(404).end();
@@ -74,7 +85,7 @@ app.get(baseUrl + "/craft/:id", function (request, response) {
 });
 
 // DELETE craft
-app.delete(baseUrl + "/craft/:id", function (request, response) {
+router.delete("/craft/:id", function (request, response) {
     CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, __v: false } }, function (error, craft) {
         if (error) return handleError(error, response);
         if (!craft) return response.status(404).end();
@@ -83,7 +94,7 @@ app.delete(baseUrl + "/craft/:id", function (request, response) {
 });
 
 // POST craft including part list and encoded thumbnail
-app.post(baseUrl + "/craft", function (request, response) {
+router.post("/craft", function (request, response) {
     // prevent manipulating the _id or date field
     delete request.body._id;
     delete request.body.date;
@@ -93,6 +104,15 @@ app.post(baseUrl + "/craft", function (request, response) {
         // return it back to client on success with updated fields like _id and date
         response.send(craft);
     });
+});
+
+// enable the rest router
+app.use("/api", router);
+
+// hide errors from the client
+app.use(function(error, request, response, next) {
+    console.error(error);
+    response.status(error.status).end();
 });
 
 // start the server
