@@ -31,7 +31,7 @@ var CraftModel = mongoose.model("Craft", CraftSchema);
 
 // create express http server
 var app = express();
-//app.use(compress());
+//app.use(compress());  // causes error with RestSharp under Mono :-(
 app.use(bodyParser.json());
 
 // add middleware to log all api requests to the console

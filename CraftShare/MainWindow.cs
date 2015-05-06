@@ -157,7 +157,7 @@ namespace CraftShare
             }
             // draw paging controls at the bottom of the window
             GUILayout.FlexibleSpace();
-            GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip, _pageSkip + _pageLimit));
+            GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip+1, _pageSkip + _pageLimit));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Prev page"))
             {

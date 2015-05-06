@@ -1,0 +1,28 @@
+# Bugs
+Mongoose throws uncaught exception when a validation error occurs
+Express returns uncool error messages to the client when a url argument can not be parsed, e.g. caused by invalid characters like !"§$%
+
+# Todo
+Move settings to a separate window which is opened via a button on the main window
+ Open the settings window automatically when no configuration is found
+ Add "maybe check the settings" to the error message
+Fix that damn "Failed to load." bug
+More details about the ships in the list
+Download thumbnail and craft on select not with the list
+Transfer of the thumbnails should be binary not schtring
+
+# Notes
+Save ship in the editor before upload to trigger the thumbnail generation
+ - craft and thumbnail can get out of sync, find out how this can happen
+ - maybe try generating the thumbnails manually again
+Move the window size reset to another location to fix the click-through bug.. again..
+
+# Ideas
+Add features to make a public server feasible:
+ - Authentication required to upload a ship: simple username/password should be sufficient
+ - Authentication required to delete a ship: Limit deletion to the users own ships
+ - Add a version check to the api to ensure old clients realize that they are old
+Add sorting and filtering to the table
+Build multiple thumbnails to animate a rotating ship in the preview
+Add an Ember-Website which also consumes the REST service to display crafts
+ - start with a simple read-only list and details page, just like the window in KSP
