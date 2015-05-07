@@ -54,6 +54,36 @@ namespace CraftShare
             DrawLeftSide();
             DrawRightSide();
             GUILayout.EndHorizontal();
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Prev page"))
+            {
+                _pageSkip -= _pageLimit;
+                if (_pageSkip < 0) _pageSkip = 0;
+                UpdateCraftList();
+            }
+            if (GUILayout.Button("Next page"))
+            {
+                _pageSkip += _pageLimit;
+                UpdateCraftList();
+            }
+            if (GUILayout.Button("Refresh list"))
+            {
+                _pageSkip = 0;
+                UpdateCraftList();
+            }
+            if (GUILayout.Button("Share current craft"))
+            {
+                ShareCurrentCraft();
+            }
+            if (GUILayout.Button("Settings"))
+            {
+                ModGlobals.SettingsWindow.Open();
+            }
+            if (GUILayout.Button("Close"))
+            {
+                Close();
+            }
+            GUILayout.EndHorizontal();
             GUI.DragWindow();
         }
 
@@ -128,28 +158,6 @@ namespace CraftShare
             GUILayout.FlexibleSpace();
             //TODO: improve page numbering
             GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip+1, _pageSkip + _pageLimit));
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Prev page"))
-            {
-                _pageSkip -= _pageLimit;
-                if (_pageSkip < 0) _pageSkip = 0;
-                UpdateCraftList();
-            }
-            if (GUILayout.Button("Next page"))
-            {
-                _pageSkip += _pageLimit;
-                UpdateCraftList();
-            }
-            if (GUILayout.Button("Settings"))
-            {
-                ModGlobals.SettingsWindow.Open();
-            }
-            //TODO: find a better spot for the close button, bottom right corner would be nice
-            if (GUILayout.Button("Close"))
-            {
-                Close();
-            }
-            GUILayout.EndHorizontal();
         }
 
         private void SelectCraft(SharedCraft craft)
@@ -174,18 +182,6 @@ namespace CraftShare
             GUILayout.BeginVertical(GUILayout.Width(RightWidth));
             GUILayout.Label("Details", ModGlobals.HeadStyle);
             DrawCraftDetails();
-            GUILayout.FlexibleSpace();
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Refresh list"))
-            {
-                _pageSkip = 0;
-                UpdateCraftList();
-            }
-            if (GUILayout.Button("Share current craft"))
-            {
-                ShareCurrentCraft();
-            }
-            GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
         
