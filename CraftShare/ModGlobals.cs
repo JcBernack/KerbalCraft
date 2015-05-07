@@ -80,14 +80,6 @@ namespace CraftShare
         }
 
         /// <summary>
-        /// Builds the path to the auto-generated thumbnail for the given ship.
-        /// </summary>
-        public static string GetCraftThumbnailPath(ShipConstruct ship)
-        {
-            return string.Format("thumbs/{0}_{1}_{2}.png", HighLogic.SaveFolder, ShipConstruction.GetShipsSubfolderFor(ship.shipFacility), ship.shipName);
-        }
-
-        /// <summary>
         /// Loads the configuration file and applies the values.
         /// </summary>
         public static void LoadConfig()

@@ -253,9 +253,10 @@ namespace CraftShare
             // save current craft to file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "upload.craft");
             ship.SaveShip().Save(craftPath);
+            // update the thumbnail
+            ThumbnailHelper.CaptureThumbnail(ship, ModGlobals.ThumbnailResolution, ModGlobals.PluginDataPath, "thumbnail");
             // read the thumbnail
-            //TODO: find a way to manually generate the thumbnail or force KSP to refresh it
-            var bytes = File.ReadAllBytes(ModGlobals.GetCraftThumbnailPath(ship));
+            var bytes = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
             // create transfer object including compressed content of the craft file
             var shared = new SharedCraft
             {
