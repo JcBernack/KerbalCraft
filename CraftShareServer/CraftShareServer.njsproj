@@ -7,7 +7,7 @@
     <RootNamespace>CraftShareServer</RootNamespace>
     <NodejsPort>
     </NodejsPort>
-    <ScriptArguments>-p 8443</ScriptArguments>
+    <ScriptArguments>-p 10412</ScriptArguments>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
