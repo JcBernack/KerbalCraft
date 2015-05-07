@@ -13,12 +13,17 @@ namespace CraftShare
     {
         private static RestClient _client;
 
+        static RestApi()
+        {
+            ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
+        }
+
         /// <summary>
         /// Applies a new host address to use for all upcoming request.
         /// </summary>
         public static void SetHostAddress(string host)
         {
-            _client = new RestClient(string.Format("http://{0}/api/", host));
+            _client = new RestClient(string.Format("https://{0}/api/", host));
         }
 
         private static RestRequest CreateRequest(string ressource, Method method)
