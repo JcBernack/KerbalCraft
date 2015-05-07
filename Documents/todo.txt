@@ -1,7 +1,7 @@
 # Bugs
 Mongoose throws uncaught exception when a validation error occurs
 Express returns uncool error messages to the client when a url argument can not be parsed, e.g. caused by invalid characters like !"§$%
-Move the window size reset to another location to fix the click-through bug.. again..
+Maybe refactor the window handling to not use the RenderingManager anymore but instead use the OnGUI event of CraftListMod
 Save ship in the editor before upload to trigger the thumbnail generation
  - craft and thumbnail can get out of sync, find out how this can happen
  - maybe try generating the thumbnails manually again
