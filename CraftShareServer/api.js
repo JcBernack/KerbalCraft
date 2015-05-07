@@ -1,16 +1,11 @@
 ﻿var model = require("./model.js");
 
-function queryInt(request, name, standard, min) {
+function queryInt(request, name, standard, min, max) {
     if (!request.query.hasOwnProperty(name)) return standard;
     var value = parseInt(request.query[name]);
     if (isNaN(value)) value = standard;
-    if (value < min) value = min;
-    return value;
-}
-
-function queryInt(request, name, standard, min, max) {
-    var value = queryInt(request, name, standard, min);
-    if (value > max) value = max;
+    if (min && value < min) value = min;
+    if (max && value > max) value = max;
     return value;
 }
 
