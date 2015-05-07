@@ -31,6 +31,8 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="api.js" />
+    <Compile Include="model.js" />
     <Compile Include="server.js" />
     <Content Include="package.json" />
   </ItemGroup>

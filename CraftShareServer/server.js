@@ -1,35 +1,29 @@
-﻿var express = require("express");
+﻿var https = require("https");
+var fs = require("fs");
+var express = require("express");
 var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
 var compress = require("compression");
+var api = require("./api");
 
+// log uncaught exceptions, but stop the application from crashing
+process.on("uncaughtException", function (error) {
+    console.log("Caught exception: " + error);
+});
+
+// connect to database
 //mongoose.set("debug", true);
 mongoose.connect("localhost", "craftshare");
 
-var db = mongoose.connection;
-
-db.on("error", function (error) {
+mongoose.connection.on("error", function (error) {
     console.log("MongoDB error: " + error);
 });
 
-db.once("open", function () {
+mongoose.connection.once("open", function () {
     console.log("Connected to MongoDB");
 });
 
-var ObjectId = mongoose.Schema.Types.ObjectId;
-
-var CraftSchema = mongoose.Schema({
-    date: { type: Date, default: Date.now },
-    name: { type: String, required: true },
-    facility: { type: String, required: true },
-    author: { type: String, required: true },
-    craft: { type: String, required: true },
-    thumbnail: { type: String }
-});
-
-var CraftModel = mongoose.model("Craft", CraftSchema);
-
-// create express http server
+// create express server
 var app = express();
 //app.use(compress());  // causes error with RestSharp under Mono :-(
 app.use(bodyParser.json());
@@ -44,80 +38,31 @@ app.use(function(request, response, next) {
     next();
 });
 
-process.on("uncaughtException", function (error) {
-    console.log("Caught exception: " + error);
-});
+// add the rest router
+app.use("/api", api(express.Router()));
 
-function handleError(error, response) {
-    console.log("Error:", error);
-    response.status(error.name === "ValidationError" ? 400 : 500).end();
-}
-
-// define REST routes
-var router = express.Router();
-
-function queryInt(request, name, standard, min, max) {
-    if (!request.query.hasOwnProperty(name)) return standard;
-    var value = parseInt(request.query[name]);
-    if (isNaN(value)) value = standard;
-    if (value < min) value = min;
-    if (value > max) value = max;
-    return value;
-}
-
-// GET craft list, without thumbnail and part list
-router.get("/craft", function (request, response) {
-    var skip = queryInt(request, "skip", 0, 0, Number.MAX_VALUE);
-    var limit = queryInt(request, "limit", 20, 1, 50);
-    CraftModel.find(null, { craft: false, __v: false }, { sort: { date: -1 }, skip: skip, limit: limit }, function (error, crafts) {
-        if (error) return handleError(error, response);
-        if (!crafts || crafts.length < 1) return response.status(404).end();
-        response.send(crafts);
-    });
-});
-
-// GET craft data
-router.get("/craft/:id", function (request, response) {
-    CraftModel.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
-        if (error) return handleError(error, response);
-        if (!craft) return response.status(404).end();
-        response.send(craft);
-    });
-});
-
-// DELETE craft
-router.delete("/craft/:id", function (request, response) {
-    CraftModel.findByIdAndRemove(request.params.id, { select: { craft: false, thumbnail: false, __v: false } }, function (error, craft) {
-        if (error) return handleError(error, response);
-        if (!craft) return response.status(404).end();
-        response.status(204).end();
-    });
-});
-
-// POST craft including part list and encoded thumbnail
-router.post("/craft", function (request, response) {
-    // prevent manipulating the _id or date field
-    delete request.body._id;
-    delete request.body.date;
-    // create craft document and save it to the database
-    CraftModel.create(request.body, function(error, craft) {
-        if (error) return handleError(error, response);
-        // return it back to client on success with updated fields like _id and date
-        response.send(craft);
-    });
-});
-
-// enable the rest router
-app.use("/api", router);
-
-// hide errors from the client
+// add middleware hide errors from the client
 app.use(function(error, request, response, next) {
     console.error(error);
     response.status(error.status).end();
 });
 
+// load ssl certificate
+var credentials = {
+    key: fs.readFileSync("file.pem"),
+    cert: fs.readFileSync("file.crt")
+};
+console.log("Certificate loaded");
+
+// supply passphrase if given
+if (process.argv.length > 2) {
+    console.log("Using the given passphrase");
+    credentials.passphrase = process.argv[2];
+}
+
 // start the server
 var port = process.env.PORT || 8000;
-var server = app.listen(port, function() {
+var server = https.createServer(credentials, app);
+server.listen(port, function() {
     console.log("listening on port " + port);
 });
