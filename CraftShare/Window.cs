@@ -20,9 +20,8 @@ namespace CraftShare
         public string Title;
 
         private readonly int _windowID;
+        private readonly string _lockID;
         private bool _inputsLocked;
-        
-        private const string LockID = "CraftShare_noclick";
 
         protected Window(float left, float top, string title)
         {
@@ -30,6 +29,7 @@ namespace CraftShare
             Rect.y = top;
             Title = title;
             _windowID = Random.Range(1000, 2000000) + Assembly.GetExecutingAssembly().FullName.GetHashCode();
+            _lockID = "CraftShare_noclick" + _windowID;
             Hide += OnClose;
         }
 
@@ -57,12 +57,12 @@ namespace CraftShare
             var mouseOverWindow = Rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
             if (!_inputsLocked && mouseOverWindow)
             {
-                EditorLogic.fetch.Lock(true, true, true, LockID);
+                EditorLogic.fetch.Lock(true, true, true, _lockID);
                 _inputsLocked = true;
             }
             if (_inputsLocked && !mouseOverWindow)
             {
-                EditorLogic.fetch.Unlock(LockID);
+                EditorLogic.fetch.Unlock(_lockID);
                 _inputsLocked = false;
             }
         }
@@ -71,7 +71,7 @@ namespace CraftShare
         {
             // prevent the UI from being locked forever when the window is closed while the mouse is over the window
             // e.g. when the user clicks a "close" button on the window itself
-            if (_inputsLocked) EditorLogic.fetch.Unlock(LockID);
+            if (_inputsLocked) EditorLogic.fetch.Unlock(_lockID);
         }
     }
 }

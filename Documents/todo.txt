@@ -6,9 +6,6 @@ Save ship in the editor before upload to trigger the thumbnail generation
  - maybe try generating the thumbnails manually again
 
 # Todo
-Move settings to a separate window which is opened via a button on the main window
- Open the settings window automatically when no configuration is found
- Add "maybe check the settings" to the error message
 Fix that damn "Failed to load." bug
 More details about the ships in the list
 Download thumbnail and craft on select not with the list

@@ -14,24 +14,34 @@ namespace CraftShare
         private List<SharedCraft> _craftList;
         private SharedCraft _selectedCraft;
 
+        private readonly Texture2D _thumbnail;
         private string _tableMessage;
-        private Texture2D _thumbnail;
 
         private int _pageSkip;
         private int _pageLimit = 20;
         private int _pageLength;
 
         public MainWindow()
-            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, Screen.height / 4f, "CraftShare")
+            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "CraftShare")
         {
+            _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
             ResetState();
             Show += OnShow;
             ModGlobals.SettingsChange += OnSettingsChanged;
         }
 
+        private void ResetState()
+        {
+            _tableMessage = "List not loaded.";
+            _pageSkip = 0;
+            _pageLength = 0;
+            _craftList = null;
+            _selectedCraft = null;
+        }
+
         protected void OnShow()
         {
-            // update the list when the windows is opened
+            // update the list when the window is opened
             UpdateCraftList();
         }
 
@@ -39,12 +49,6 @@ namespace CraftShare
         {
             // update the list when the settings are changed and the window is already open
             if (Visible) UpdateCraftList();
-        }
-
-        protected override void Initialize()
-        {
-            ModGlobals.InitializeGUI();
-            _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
         }
 
         protected override void DrawMenu(int id)
@@ -55,7 +59,7 @@ namespace CraftShare
             DrawRightSide();
             GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Prev page"))
+            if (GUILayout.Button("Previous page"))
             {
                 _pageSkip -= _pageLimit;
                 if (_pageSkip < 0) _pageSkip = 0;
@@ -87,15 +91,6 @@ namespace CraftShare
             GUI.DragWindow();
         }
 
-        private void ResetState()
-        {
-            _tableMessage = "List not loaded.";
-            _pageSkip = 0;
-            _pageLength = 0;
-            _craftList = null;
-            _selectedCraft = null;
-        }
-
         private void UpdateCraftList()
         {
             ResetWindowSize();
@@ -119,7 +114,7 @@ namespace CraftShare
                 Debug.LogException(ex);
                 _craftList = null;
                 _pageLength = 0;
-                _tableMessage = "Failed to load list.";
+                _tableMessage = "Failed to load list, maybe check the settings.";
             }
         }
 

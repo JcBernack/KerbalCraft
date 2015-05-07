@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace CraftShare
 {
@@ -24,19 +25,50 @@ namespace CraftShare
             DontDestroyOnLoad(this);
         }
 
+        public void OnGUI()
+        {
+            ModGlobals.InitializeGUI();
+        }
+
         private void AddLauncherButton()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
-            AppLauncherButton = ApplicationLauncher.Instance.AddModApplication(ModGlobals.MainWindow.Open, ModGlobals.MainWindow.Close,
-                null, null, null, OnDisable, VisibleInScenes, ModGlobals.IconSmall);
+            AppLauncherButton = ApplicationLauncher.Instance.AddModApplication(OnTrue, OnFalse, null, null, null, OnDisable, VisibleInScenes, ModGlobals.IconSmall);
+            ModGlobals.MainWindow.Hide += OnHide;
+            ModGlobals.SettingsWindow.Hide += OnHide;
+        }
+
+        private void OnHide()
+        {
+            if (!ModGlobals.MainWindow.Visible && !ModGlobals.SettingsWindow.Visible)
+            {
+                OnDisable();
+            }
+        }
+
+        private void OnTrue()
+        {
+            ModGlobals.SettingsChange -= OnTrue;
+            if (ModGlobals.SettingsLoaded)
+            {
+                ModGlobals.MainWindow.Open();
+            }
+            else
+            {
+                ModGlobals.SettingsWindow.Open();
+                ModGlobals.SettingsChange += OnTrue;
+            }
+        }
+
+        private void OnFalse()
+        {
+            ModGlobals.MainWindow.Close();
+            ModGlobals.SettingsWindow.Close();
         }
 
         private void OnDisable()
         {
-            // make sure the windows are properly closed
-            ModGlobals.MainWindow.Close();
-            ModGlobals.SettingsWindow.Close();
-            // and the button is in its "false" state
+            // make sure the button is in its "false" state
             if (AppLauncherButton != null) AppLauncherButton.SetFalse();
         }
     }

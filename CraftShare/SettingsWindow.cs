@@ -21,11 +21,12 @@ namespace CraftShare
             _editAuthorName = ModGlobals.AuthorName;
             // move the window to the screen center
             Rect.x = Screen.width/2 - Width/2;
-            Rect.y = Screen.height/3;
+            Rect.y = 80;
         }
 
         protected override void DrawMenu(int id)
         {
+            PreventEditorClickthrough();
             GUILayout.BeginVertical(GUILayout.Width(Width));
             GUILayout.Label("Host address:", ModGlobals.HeadStyle);
             _editHostAddress = GUILayout.TextField(_editHostAddress);

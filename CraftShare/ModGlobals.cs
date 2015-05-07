@@ -20,6 +20,7 @@ namespace CraftShare
         public static string HostAddress { get; private set; }
         public static string AuthorName { get; private set; }
 
+        public static bool SettingsLoaded { get; private set; }
         public static event Action SettingsChange;
 
         public static Texture2D IconSmall { get; private set; }
@@ -101,6 +102,7 @@ namespace CraftShare
                 HostAddress = config.GetValue("HostAddress");
                 AuthorName = config.GetValue("AuthorName");
                 Debug.Log("CraftShare: configuration loaded");
+                SettingsLoaded = true;
                 SetHostAddress(HostAddress);
                 if (SettingsChange != null) SettingsChange();
             }
@@ -124,6 +126,7 @@ namespace CraftShare
                 HostAddress = hostAddress;
                 AuthorName = authorName;
                 Debug.Log("CraftShare: configuration saved");
+                SettingsLoaded = true;
             }
             catch (Exception ex)
             {
