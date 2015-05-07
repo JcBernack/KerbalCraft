@@ -5,6 +5,7 @@ namespace CraftShare
     public class SettingsWindow
         : Window
     {
+        private const int Width = 200;
         private string _editHostAddress;
         private string _editAuthorName;
 
@@ -18,11 +19,14 @@ namespace CraftShare
         {
             _editHostAddress = ModGlobals.HostAddress;
             _editAuthorName = ModGlobals.AuthorName;
+            // move the window to the screen center
+            Rect.x = Screen.width/2 - Width/2;
+            Rect.y = Screen.height/3;
         }
 
         protected override void DrawMenu(int id)
         {
-            GUILayout.BeginVertical(GUILayout.Width(200));
+            GUILayout.BeginVertical(GUILayout.Width(Width));
             GUILayout.Label("Host address:", ModGlobals.HeadStyle);
             _editHostAddress = GUILayout.TextField(_editHostAddress);
             GUILayout.Label("Author name:", ModGlobals.HeadStyle);
@@ -38,7 +42,6 @@ namespace CraftShare
                 Close();
             }
             GUILayout.EndHorizontal();
-            GUILayout.Label("Please refresh the list after changing the host address.");
             GUILayout.EndVertical();
             GUI.DragWindow();
         }

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using UnityEngine;
 
 namespace CraftShare
@@ -18,6 +19,8 @@ namespace CraftShare
         
         public static string HostAddress { get; private set; }
         public static string AuthorName { get; private set; }
+
+        public static event Action SettingsChange;
 
         public static Texture2D IconSmall { get; private set; }
         public static Texture2D IconLarge { get; private set; }
@@ -99,6 +102,7 @@ namespace CraftShare
                 AuthorName = config.GetValue("AuthorName");
                 Debug.Log("CraftShare: configuration loaded");
                 SetHostAddress(HostAddress);
+                if (SettingsChange != null) SettingsChange();
             }
             else
             {
@@ -109,24 +113,26 @@ namespace CraftShare
         /// <summary>
         /// Applies the given values and saves them to the configuration file.
         /// </summary>
-        /// <param name="hostAddress"></param>
-        /// <param name="authorName"></param>
         public static void SaveConfig(string hostAddress, string authorName)
         {
             var config = new ConfigNode();
             config.AddValue("HostAddress", hostAddress);
             config.AddValue("AuthorName", authorName);
-            if (config.Save(ConfigPath))
+            try
             {
+                config.Save(ConfigPath);
                 HostAddress = hostAddress;
                 AuthorName = authorName;
                 Debug.Log("CraftShare: configuration saved");
-                SetHostAddress(HostAddress);
             }
-            else
+            catch (Exception ex)
             {
                 Debug.LogWarning(string.Format("CraftShare: failed to save configuration to {0}", ConfigPath));
+                Debug.LogException(ex);
+                return;
             }
+            SetHostAddress(HostAddress);
+            if (SettingsChange != null) SettingsChange();
         }
 
         private static void SetHostAddress(string hostAddress)

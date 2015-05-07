@@ -24,20 +24,27 @@ namespace CraftShare
         public MainWindow()
             : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, Screen.height / 4f, "CraftShare")
         {
-            Show += OnShow;
             ResetState();
-        }
-
-        protected override void Initialize()
-        {
-            ModGlobals.InitializeGUI();
-            _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
+            Show += OnShow;
+            ModGlobals.SettingsChange += OnSettingsChanged;
         }
 
         protected void OnShow()
         {
             // update the list when the windows is opened
             UpdateCraftList();
+        }
+
+        private void OnSettingsChanged()
+        {
+            // update the list when the settings are changed and the window is already open
+            if (Visible) UpdateCraftList();
+        }
+
+        protected override void Initialize()
+        {
+            ModGlobals.InitializeGUI();
+            _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
         }
 
         protected override void DrawMenu(int id)
@@ -133,6 +140,15 @@ namespace CraftShare
                 _pageSkip += _pageLimit;
                 UpdateCraftList();
             }
+            if (GUILayout.Button("Settings"))
+            {
+                ModGlobals.SettingsWindow.Open();
+            }
+            //TODO: find a better spot for the close button, bottom right corner would be nice
+            if (GUILayout.Button("Close"))
+            {
+                Close();
+            }
             GUILayout.EndHorizontal();
         }
 
@@ -159,10 +175,6 @@ namespace CraftShare
             GUILayout.Label("Details", ModGlobals.HeadStyle);
             DrawCraftDetails();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Settings"))
-            {
-                ModGlobals.SettingsWindow.Open();
-            }
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh list"))
             {
