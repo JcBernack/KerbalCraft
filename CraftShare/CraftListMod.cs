@@ -1,5 +1,4 @@
-﻿using System.IO;
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace CraftShare
 {
@@ -8,17 +7,11 @@ namespace CraftShare
         : MonoBehaviour
     {
         private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB;
-        
-        private MainWindow _window;
 
         public void Awake()
         {
-            // make sure the PluginData folder exists
-            Directory.CreateDirectory(ModGlobals.PluginDataPath);
             // initialize globally used objects
             ModGlobals.Initialize();
-            // instantiate the main window of this mod
-            _window = new MainWindow();
             // add a button to the application launcher
             if (ApplicationLauncher.Ready) AddLauncherButton();
             else GameEvents.onGUIApplicationLauncherReady.Add(AddLauncherButton);
@@ -26,7 +19,7 @@ namespace CraftShare
 
         private void AddLauncherButton()
         {
-            ApplicationLauncher.Instance.AddModApplication(_window.Show, _window.Hide, null, null, null, null, VisibleInScenes, ModGlobals.IconSmall);
+            ApplicationLauncher.Instance.AddModApplication(ModGlobals.MainWindow.Open, ModGlobals.MainWindow.Close, null, null, null, null, VisibleInScenes, ModGlobals.IconSmall);
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
         }
 

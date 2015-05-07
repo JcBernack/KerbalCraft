@@ -10,55 +10,22 @@ namespace CraftShare
     {
         private const int LeftWidth = 400;
         private const int RightWidth = 250;
+
         private List<SharedCraft> _craftList;
         private SharedCraft _selectedCraft;
 
         private string _tableMessage;
         private Texture2D _thumbnail;
 
-        private string _hostAddress;
-        private string _authorName;
-
-        private string _editHostAddress;
-        private string _editAuthorName;
-
         private int _pageSkip;
         private int _pageLimit = 20;
         private int _pageLength;
-        
-        private bool _inputsLocked;
 
         public MainWindow()
             : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, Screen.height / 4f, "CraftShare")
         {
-            LoadConfig();
-            RestApi.SetHostAddress(_hostAddress);
-            ResetWindow();
-        }
-
-        private void LoadConfig()
-        {
-            // set default values
-            _hostAddress = "localhost:8000";
-            _authorName = HighLogic.SaveFolder;
-            // try to parse values from config
-            var config = ConfigNode.Load(ModGlobals.ConfigPath);
-            if (config != null)
-            {
-                _hostAddress = config.GetValue("HostAddress");
-                _authorName = config.GetValue("AuthorName");
-            }
-            // copy values over to the editable fields
-            _editHostAddress = _hostAddress;
-            _editAuthorName = _authorName;
-        }
-
-        private void SaveConfig()
-        {
-            var config = new ConfigNode();
-            config.AddValue("HostAddress", _hostAddress);
-            config.AddValue("AuthorName", _authorName);
-            config.Save(ModGlobals.ConfigPath);
+            Show += OnShow;
+            ResetState();
         }
 
         protected override void Initialize()
@@ -67,7 +34,7 @@ namespace CraftShare
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
         }
 
-        protected override void OnShow()
+        protected void OnShow()
         {
             // update the list when the windows is opened
             UpdateCraftList();
@@ -75,15 +42,15 @@ namespace CraftShare
 
         protected override void DrawMenu(int id)
         {
+            PreventEditorClickthrough();
             GUILayout.BeginHorizontal();
             DrawLeftSide();
             DrawRightSide();
             GUILayout.EndHorizontal();
             GUI.DragWindow();
-            PreventEditorClickthrough();
         }
 
-        private void ResetWindow()
+        private void ResetState()
         {
             _tableMessage = "List not loaded.";
             _pageSkip = 0;
@@ -94,9 +61,7 @@ namespace CraftShare
 
         private void UpdateCraftList()
         {
-            // make the window as small as possible again
-            Rect.width = 0;
-            Rect.height = 0;
+            ResetWindowSize();
             try
             {
                 _craftList = RestApi.GetCraftList(_pageSkip, _pageLimit);
@@ -131,10 +96,7 @@ namespace CraftShare
         private void DrawTable()
         {
             // add table headers
-            var cells = new List<string>
-            {
-                "Name", "Facility", "Author"
-            };
+            var cells = new List<string> { "Name", "Facility", "Author" };
             var dimension = cells.Count;
             if (_pageLength == 0)
             {
@@ -157,6 +119,7 @@ namespace CraftShare
             }
             // draw paging controls at the bottom of the window
             GUILayout.FlexibleSpace();
+            //TODO: improve page numbering
             GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip+1, _pageSkip + _pageLimit));
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Prev page"))
@@ -187,6 +150,7 @@ namespace CraftShare
                 Debug.LogWarning("CraftShare: unable to parse thumbnail");
                 Debug.LogException(ex);
             }
+            ResetWindowSize();
         }
 
         private void DrawRightSide()
@@ -195,42 +159,24 @@ namespace CraftShare
             GUILayout.Label("Details", ModGlobals.HeadStyle);
             DrawCraftDetails();
             GUILayout.FlexibleSpace();
-            GUILayout.Label("Settings", ModGlobals.HeadStyle);
-            _editHostAddress = GUIUtil.EditableStringField("Host", _editHostAddress, OnHostAddressSubmit);
-            _editAuthorName = GUIUtil.EditableStringField("Author", _editAuthorName, OnAuthorNameSubmit);
+            if (GUILayout.Button("Settings"))
+            {
+                ModGlobals.SettingsWindow.Open();
+            }
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Refresh list"))
             {
                 _pageSkip = 0;
                 UpdateCraftList();
             }
-            if (GUILayout.Button("Share current craft")) ShareCurrentCraft();
+            if (GUILayout.Button("Share current craft"))
+            {
+                ShareCurrentCraft();
+            }
             GUILayout.EndHorizontal();
             GUILayout.EndVertical();
         }
-
-        private void OnHostAddressSubmit(string host)
-        {
-            Debug.Log("CraftShare: change host to " + host);
-            _hostAddress = host;
-            RestApi.SetHostAddress(host);
-            SaveConfig();
-            ResetWindow();
-            UpdateCraftList();
-        }
-
-        private void OnAuthorNameSubmit(string name)
-        {
-            // limit author name to 30 characters
-            if (name.Length > 30)
-            {
-                name = name.Substring(0, 30);
-                _editAuthorName = name;
-            }
-            _authorName = name;
-            SaveConfig();
-        }
-
+        
         private void DrawCraftDetails()
         {
             if (_selectedCraft == null)
@@ -300,18 +246,19 @@ namespace CraftShare
             //TODO: check if ship.Count also contains unattached parts
             if (ship.Count == 0) return;
             if (ship.shipName.Length == 0) return;
-            if (_authorName.Length == 0) return;
+            if (ModGlobals.AuthorName.Length == 0) return;
             // save current craft to file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "upload.craft");
             ship.SaveShip().Save(craftPath);
             // read the thumbnail
+            //TODO: find a way to manually generate the thumbnail or force KSP to refresh it
             var bytes = File.ReadAllBytes(ModGlobals.GetCraftThumbnailPath(ship));
             // create transfer object including compressed content of the craft file
             var shared = new SharedCraft
             {
                 name = ship.shipName,
                 facility = ship.shipFacility.ToString(),
-                author = _authorName,
+                author = ModGlobals.AuthorName,
                 craft = StringCompressor.Compress(File.ReadAllText(craftPath)),
                 thumbnail = BinaryCompressor.Compress(bytes)
             };
@@ -328,21 +275,6 @@ namespace CraftShare
             {
                 Debug.LogError("CraftShare: sharing craft failed");
                 Debug.LogException(ex);
-            }
-        }
-        
-        private void PreventEditorClickthrough()
-        {
-            var mouseOverWindow = Rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
-            if (!_inputsLocked && mouseOverWindow)
-            {
-                EditorLogic.fetch.Lock(true, true, true, "CraftShare_noclick");
-                _inputsLocked = true;
-            }
-            if (_inputsLocked && !mouseOverWindow)
-            {
-                EditorLogic.fetch.Unlock("CraftShare_noclick");
-                _inputsLocked = false;
             }
         }
     }

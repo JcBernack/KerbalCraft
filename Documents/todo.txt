@@ -1,6 +1,10 @@
 # Bugs
 Mongoose throws uncaught exception when a validation error occurs
 Express returns uncool error messages to the client when a url argument can not be parsed, e.g. caused by invalid characters like !"§$%
+Move the window size reset to another location to fix the click-through bug.. again..
+Save ship in the editor before upload to trigger the thumbnail generation
+ - craft and thumbnail can get out of sync, find out how this can happen
+ - maybe try generating the thumbnails manually again
 
 # Todo
 Move settings to a separate window which is opened via a button on the main window
@@ -10,12 +14,6 @@ Fix that damn "Failed to load." bug
 More details about the ships in the list
 Download thumbnail and craft on select not with the list
 Transfer of the thumbnails should be binary not schtring
-
-# Notes
-Save ship in the editor before upload to trigger the thumbnail generation
- - craft and thumbnail can get out of sync, find out how this can happen
- - maybe try generating the thumbnails manually again
-Move the window size reset to another location to fix the click-through bug.. again..
 
 # Ideas
 Add features to make a public server feasible:
