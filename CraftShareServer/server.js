@@ -4,16 +4,29 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var mongoose = require("mongoose");
 var compress = require("compression");
+var argv = require("minimist")(process.argv.slice(2));
 var api = require("./api");
 
-// log uncaught exceptions, but stop the application from crashing
-process.on("uncaughtException", function (error) {
-    console.log("Caught exception: " + error);
-});
+function printUsage() {
+    console.log("Usage:");
+    console.log("-p # or --port # Specify the port to listen on.");
+    console.log("-d # or --database # Specify the database name to use, default is \"craftshare\"");
+    console.log("-s # or --passphrase # Specify the passphrase for the certificate.");
+    process.exit(0);
+}
+
+if (argv.h || argv.help) {
+    printUsage();
+}
+
+if (!argv.p && !argv.port) {
+    console.log("Must specify a port with -p # or --port #");
+    process.exit(0);
+}
 
 // connect to database
 //mongoose.set("debug", true);
-mongoose.connect("localhost", "craftshare");
+mongoose.connect("localhost", argv.d || argv.database || "craftshare");
 
 mongoose.connection.on("error", function (error) {
     console.log("MongoDB error: " + error);
@@ -55,14 +68,19 @@ var credentials = {
 console.log("Certificate loaded");
 
 // supply passphrase if given
-if (process.argv.length > 2) {
+if (argv.s || argv.passphrase) {
     console.log("Using the given passphrase");
-    credentials.passphrase = process.argv[2];
+    credentials.passphrase = argv.s || argv.passphrase;
 }
 
 // start the server
-var port = process.env.PORT || 8000;
+var port = argv.p || argv.port;
 var server = https.createServer(credentials, app);
 server.listen(port, function() {
     console.log("listening on port " + port);
+});
+
+// log uncaught exceptions after successful initialization, but stop the application from crashing while the server is up
+process.on("uncaughtException", function (error) {
+    console.log("Caught exception: " + error);
 });

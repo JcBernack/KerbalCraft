@@ -5,7 +5,9 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
     <Name>CraftShareServer</Name>
     <RootNamespace>CraftShareServer</RootNamespace>
-    <NodejsPort>8000</NodejsPort>
+    <NodejsPort>
+    </NodejsPort>
+    <ScriptArguments>-p 8443</ScriptArguments>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
