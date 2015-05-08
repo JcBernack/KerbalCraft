@@ -65,23 +65,24 @@ namespace CraftShare
         /// </summary>
         /// <param name="id">Specifies the id of a shared craft.</param>
         /// <returns>The craft string returned from the server.</returns>
-        public static string GetCraft(string id)
+        public static byte[] GetCraft(string id)
         {
-            var request = CreateRequest("craft/{id}", Method.GET);
+            var request = CreateRequest("craft/data/{id}", Method.GET);
             request.AddUrlSegment("id", id);
-            var response = _client.Execute<SharedCraft>(request);
+            var response = _client.Execute(request);
             ThrowOnError(response);
-            return response.Data.craft;
+            return CLZF2.Decompress(response.RawBytes);
         }
 
         /// <summary>
         /// Creates a new shared craft with the given data.
         /// </summary>
         /// <returns>The newly created element with updated information returned from the server.</returns>
-        public static SharedCraft PostCraft(SharedCraft craft, byte[] thumbnail)
+        public static SharedCraft PostCraft(SharedCraft craft, byte[] craftData, byte[] thumbnail)
         {
             var request = CreateRequest("craft/", Method.POST);
             request.AddObject(craft);
+            request.AddFile("craftData", CLZF2.Compress(craftData), "craftData.craft");
             request.AddFile("thumbnail", thumbnail, "thumbnail.png");
             var response = _client.Execute<SharedCraft>(request);
             ThrowOnError(response);

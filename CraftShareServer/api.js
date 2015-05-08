@@ -1,6 +1,5 @@
 ﻿var fs = require("fs");
 var multer = require("multer");
-var autoreap = require("./multer-autoreap");
 var model = require("./model.js");
 
 function queryInt(request, name, standard, min, max) {
@@ -31,11 +30,22 @@ module.exports = function (router) {
     });
     
     // GET craft data
-    router.get("/craft/:id", function (request, response) {
+    router.get("/craft/data/:id", function (request, response) {
         model.Craft.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
             if (error) return handleError(error, response);
             if (!craft) return response.status(404).end();
-            response.send(craft);
+            response.set("Content-Type", "text/plain");
+            response.send(craft.craft);
+        });
+    });
+    
+    // GET craft thumbnail
+    router.get("/craft/thumbnail/:id", function (request, response) {
+        model.Craft.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
+            if (error) return handleError(error, response);
+            if (!craft) return response.status(404).end();
+            response.set("Content-Type", "image/png");
+            response.send(craft.thumbnail);
         });
     });
     
@@ -47,34 +57,33 @@ module.exports = function (router) {
             response.status(204).end();
         });
     });
-
-    // POST craft including part list and encoded thumbnail
+    
+    // POST craft, including thumbnail and part list
     router.post("/craft", [multer({
             dest: "./uploads/",
             putSingleFilesInArray: true, // see https://www.npmjs.com/package/multer#putsinglefilesinarray
-            //inMemory: true, //TODO: try this out
+            inMemory: true,
             limits: {
-                files: 1,
+                files: 2,
                 fileSize: 2097152 // 2 MB
             },
             onFilesLimit: function() {
                 console.log("Too many files in the request. Ignoring any further files.");
             },
-            onFileUploadComplete: function (file, request, response) {
+            onFileUploadComplete: function (file) {
                 console.log("Received a file with " + file.size + " bytes.");
                 if (file.truncated) {
                     console.log(".. but the file was too large.");
                 }
             }
         }),
-        // automatically delete all temporary files after the request was handled
-        autoreap,
         function (request, response) {
-            if (!request.files.hasOwnProperty("thumbnail")) {
+            if (!request.files.hasOwnProperty("thumbnail") || !request.files.hasOwnProperty("craftData")) {
                 return response.status(400).end();
             }
             var thumbnail = request.files.thumbnail[0];
-            if (thumbnail.truncated) {
+            var craftData = request.files.craftData[0];
+            if (thumbnail.truncated || craftData.truncated) {
                 // 413 Request Entity Too Large
                 console.log("Request aborted.");
                 return response.status(413).end();
@@ -82,33 +91,20 @@ module.exports = function (router) {
             // prevent manipulating the _id or date field
             delete request.body._id;
             delete request.body.date;
-            // load thumbnail file and add it the database
             // create craft document and save it to the database
             var input = request.body;
-            fs.readFile(thumbnail.path, function (error, data) {
+            input.craft = craftData.buffer;
+            input.thumbnail = thumbnail.buffer;
+            model.Craft.create(input, function (error, craft) {
                 if (error) return handleError(error, response);
-                input.thumbnail = data;
-                model.Craft.create(input, function (error, craft) {
-                    if (error) return handleError(error, response);
-                    // return it back to client on success with updated fields like _id and date but without the binary data fields
-                    var ret = craft.toObject();
-                    delete ret.craft;
-                    delete ret.thumbnail;
-                    response.send(ret);
-                });
+                // return it back to client on success with updated fields like _id and date but without the binary data fields
+                var ret = craft.toObject();
+                delete ret.craft;
+                delete ret.thumbnail;
+                response.send(ret);
             });
         }
     ]);
-
-    // GET craft thumbnail
-    router.get("/craft/thumbnail/:id", function (request, response) {
-        model.Craft.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
-            if (error) return handleError(error, response);
-            if (!craft) return response.status(404).end();
-            response.set("Content-Type", "image/png");
-            response.send(craft.thumbnail);
-        });
-    });
-
+    
     return router;
 };

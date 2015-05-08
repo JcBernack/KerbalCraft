@@ -5,7 +5,7 @@ var CraftSchema = mongoose.Schema({
     name: { type: String, required: true },
     facility: { type: String, required: true },
     author: { type: String, required: true },
-    craft: { type: String, required: true },
+    craft: { type: Buffer, required: true },
     thumbnail: { type: Buffer }
 });
 

@@ -9,8 +9,8 @@ namespace CraftShare
         public string name { get; set; }
         public string facility { get; set; }
         public string author { get; set; }
-        public string craft { get; set; }
-        
-        public byte[] thumbnail;
+
+        public byte[] CraftCache;
+        public byte[] ThumbnailCache;
     }
 }

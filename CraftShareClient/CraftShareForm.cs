@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using System.Windows.Forms;
 using CraftShare;
 
@@ -25,16 +26,17 @@ namespace CraftShareClient
             {
                 name = "Trollcraft",
                 facility = "VAB",
-                author = "Client app",
-                craft = "lots of parts.."
+                author = "Client app"
             };
-            var data = File.ReadAllBytes("thumbnail.png");
-            craft = RestApi.PostCraft(craft, data);
+            var thumbnail = File.ReadAllBytes("thumbnail.png");
+            var craftData = File.ReadAllBytes("landerOriginal.txt");
+            craft = RestApi.PostCraft(craft, craftData, thumbnail);
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var craft = RestApi.GetCraft(textBox1.Text);
+            var data = RestApi.GetCraft(textBox1.Text);
+            var craft = Encoding.UTF8.GetString(data);
         }
 
         private void button4_Click(object sender, EventArgs e)

@@ -161,11 +161,11 @@ namespace CraftShare
             _selectedCraft = craft;
             try
             {
-                if (_selectedCraft.thumbnail == null)
+                if (_selectedCraft.ThumbnailCache == null)
                 {
-                    _selectedCraft.thumbnail = RestApi.GetThumbnail(_selectedCraft._id);
+                    _selectedCraft.ThumbnailCache = RestApi.GetThumbnail(_selectedCraft._id);
                 }
-                _thumbnail.LoadImage(_selectedCraft.thumbnail);
+                _thumbnail.LoadImage(_selectedCraft.ThumbnailCache);
             }
             catch (Exception ex)
             {
@@ -190,7 +190,7 @@ namespace CraftShare
                 return;
             }
             // draw thumbnail or icon
-            GUILayout.Box(_selectedCraft.thumbnail == null ? ModGlobals.IconLarge : _thumbnail);
+            GUILayout.Box(_selectedCraft.ThumbnailCache == null ? ModGlobals.IconLarge : _thumbnail);
             // draw details table
             var cells = new[]
             {
@@ -221,28 +221,41 @@ namespace CraftShare
             var load = GUILayout.Button("Load");
             if (merge || load)
             {
-                if (string.IsNullOrEmpty(_selectedCraft.craft))
-                {
-                    Debug.Log("CraftShare: loading craft: " + _selectedCraft._id);
-                    _selectedCraft.craft = RestApi.GetCraft(_selectedCraft._id);
-                    _selectedCraft.craft = StringCompressor.Decompress(_selectedCraft.craft);
-                    Debug.Log("CraftShare: craft characters loaded: " + _selectedCraft.craft.Length);
-                }
-                //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
-                var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
-                File.WriteAllText(craftPath, _selectedCraft.craft);
-                Debug.Log("CraftShare: craft written to: " + craftPath);
-                if (merge)
-                {
-                    var ship = ShipConstruction.LoadShip(craftPath);
-                    EditorLogic.fetch.SpawnConstruct(ship);
-                }
-                if (load)
-                {
-                    EditorLogic.LoadShipFromFile(craftPath);
-                }
+                LoadSelectedCraft(merge);
             }
             GUILayout.EndHorizontal();
+        }
+
+        private void LoadSelectedCraft(bool merge)
+        {
+            if (_selectedCraft.CraftCache == null)
+            {
+                try
+                {
+                    Debug.Log("CraftShare: loading craft: " + _selectedCraft._id);
+                    _selectedCraft.CraftCache = RestApi.GetCraft(_selectedCraft._id);
+                    Debug.Log("CraftShare: craft characters loaded: " + _selectedCraft.CraftCache.Length);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError("CraftShare: craft download failed");
+                    Debug.LogException(ex);
+                    return;
+                }
+            }
+            //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
+            var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
+            File.WriteAllBytes(craftPath, _selectedCraft.CraftCache);
+            Debug.Log("CraftShare: craft written to: " + craftPath);
+            if (merge)
+            {
+                var ship = ShipConstruction.LoadShip(craftPath);
+                EditorLogic.fetch.SpawnConstruct(ship);
+            }
+            else
+            {
+                EditorLogic.LoadShipFromFile(craftPath);
+            }
         }
 
         private void ShareCurrentCraft()
@@ -257,22 +270,23 @@ namespace CraftShare
             ship.SaveShip().Save(craftPath);
             // update the thumbnail
             ThumbnailHelper.CaptureThumbnail(ship, ModGlobals.ThumbnailResolution, ModGlobals.PluginDataPath, "thumbnail");
-            // read the thumbnail
-            var bytes = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
-            // create transfer object including compressed content of the craft file
-            var shared = new SharedCraft
+            // prepare binary data of the craft and thumbnail
+            var craftData = File.ReadAllBytes(craftPath);
+            var thumbnail = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
+            //TODO: find a way to get thumbnail and craft data without file access
+            // create transfer object
+            var craft = new SharedCraft
             {
                 name = ship.shipName,
                 facility = ship.shipFacility.ToString(),
-                author = ModGlobals.AuthorName,
-                craft = StringCompressor.Compress(File.ReadAllText(craftPath))
+                author = ModGlobals.AuthorName
             };
             try
             {
                 // upload the craft
                 Debug.Log("CraftShare: uploading craft");
-                shared = RestApi.PostCraft(shared, bytes);
-                Debug.Log("CraftShare: new shared craft ID: " + shared._id);
+                craft = RestApi.PostCraft(craft, craftData, thumbnail);
+                Debug.Log("CraftShare: new shared craft ID: " + craft._id);
                 // refresh list to reflect the new entry
                 UpdateCraftList();
             }
