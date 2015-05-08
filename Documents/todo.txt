@@ -3,10 +3,10 @@ Mongoose throws uncaught exception when a validation error occurs, currently jus
 Maybe refactor the window handling to not use the RenderingManager anymore but instead use the OnGUI event of CraftListMod
 
 # Todo
+Add assembly version to window title
 Fix that damn "Failed to load." bug
 More details about the ships in the list
 Download thumbnail and craft on select not with the list
-Transfer of the thumbnails should be binary not schtring
 
 # Ideas
 Add features to make a public server feasible:

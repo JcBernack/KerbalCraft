@@ -26,9 +26,9 @@ namespace CraftShare
             _client = new RestClient(string.Format("https://{0}/api/", host));
         }
 
-        private static RestRequest CreateRequest(string ressource, Method method)
+        private static RestRequest CreateRequest(string resource, Method method)
         {
-            return new RestRequest(ressource, method)
+            return new RestRequest(resource, method)
             {
                 Timeout = 2000,
                 RequestFormat = DataFormat.Json,
@@ -50,7 +50,7 @@ namespace CraftShare
         /// <param name="skip">Specifies the number elements to skip from the start of the list.</param>
         /// <param name="limit">Specifies the number of elements to request from the server. The server does not necessarily respond with the given number of items.</param>
         /// <returns>The elements returned from the server.</returns>
-        public static List<SharedCraft> GetCraftList(int skip, int limit)
+        public static List<SharedCraft> GetCraft(int skip, int limit)
         {
             var request = CreateRequest("craft/", Method.GET);
             request.AddQueryParameter("skip", skip.ToString());
@@ -77,12 +77,12 @@ namespace CraftShare
         /// <summary>
         /// Creates a new shared craft with the given data.
         /// </summary>
-        /// <param name="craft">Spcifies the data to upload.</param>
         /// <returns>The newly created element with updated information returned from the server.</returns>
-        public static SharedCraft CreateCraft(SharedCraft craft)
+        public static SharedCraft PostCraft(SharedCraft craft, byte[] thumbnail)
         {
             var request = CreateRequest("craft/", Method.POST);
-            request.AddBody(craft);
+            request.AddObject(craft);
+            request.AddFile("thumbnail", thumbnail, "thumbnail.png");
             var response = _client.Execute<SharedCraft>(request);
             ThrowOnError(response);
             return response.Data;
@@ -99,6 +99,19 @@ namespace CraftShare
             var response = _client.Execute(request);
             ThrowOnError(response);
             return response.StatusCode == HttpStatusCode.OK || response.StatusCode == HttpStatusCode.NoContent;
+        }
+
+        /// <summary>
+        /// Retrieves the thumbnail for the given id.
+        /// </summary>
+        /// <returns>Raw bytes of the thumbnail, should be image/png.</returns>
+        public static byte[] GetThumbnail(string id)
+        {
+            var request = CreateRequest("craft/thumbnail/{id}", Method.GET);
+            request.AddUrlSegment("id", id);
+            var response = _client.Execute(request);
+            ThrowOnError(response);
+            return response.RawBytes;
         }
     }
 }

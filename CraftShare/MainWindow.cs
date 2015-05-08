@@ -96,7 +96,7 @@ namespace CraftShare
             ResetWindowSize();
             try
             {
-                _craftList = RestApi.GetCraftList(_pageSkip, _pageLimit);
+                _craftList = RestApi.GetCraft(_pageSkip, _pageLimit);
                 if (_craftList == null)
                 {
                     _pageLength = 0;
@@ -157,19 +157,21 @@ namespace CraftShare
 
         private void SelectCraft(SharedCraft craft)
         {
+            ResetWindowSize();
             _selectedCraft = craft;
-            if (string.IsNullOrEmpty(_selectedCraft.thumbnail)) return;
             try
             {
-                var bytes = BinaryCompressor.Decompress(_selectedCraft.thumbnail);
-                _thumbnail.LoadImage(bytes);
+                if (_selectedCraft.thumbnail == null)
+                {
+                    _selectedCraft.thumbnail = RestApi.GetThumbnail(_selectedCraft._id);
+                }
+                _thumbnail.LoadImage(_selectedCraft.thumbnail);
             }
             catch (Exception ex)
             {
-                Debug.LogWarning("CraftShare: unable to parse thumbnail");
+                Debug.LogWarning("CraftShare: unable to load thumbnail for: " + _selectedCraft._id);
                 Debug.LogException(ex);
             }
-            ResetWindowSize();
         }
 
         private void DrawRightSide()
@@ -188,7 +190,7 @@ namespace CraftShare
                 return;
             }
             // draw thumbnail or icon
-            GUILayout.Box(string.IsNullOrEmpty(_selectedCraft.thumbnail) ? ModGlobals.IconLarge : _thumbnail);
+            GUILayout.Box(_selectedCraft.thumbnail == null ? ModGlobals.IconLarge : _thumbnail);
             // draw details table
             var cells = new[]
             {
@@ -263,14 +265,13 @@ namespace CraftShare
                 name = ship.shipName,
                 facility = ship.shipFacility.ToString(),
                 author = ModGlobals.AuthorName,
-                craft = StringCompressor.Compress(File.ReadAllText(craftPath)),
-                thumbnail = BinaryCompressor.Compress(bytes)
+                craft = StringCompressor.Compress(File.ReadAllText(craftPath))
             };
             try
             {
                 // upload the craft
                 Debug.Log("CraftShare: uploading craft");
-                shared = RestApi.CreateCraft(shared);
+                shared = RestApi.PostCraft(shared, bytes);
                 Debug.Log("CraftShare: new shared craft ID: " + shared._id);
                 // refresh list to reflect the new entry
                 UpdateCraftList();

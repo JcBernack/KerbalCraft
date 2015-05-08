@@ -6,7 +6,7 @@ var CraftSchema = mongoose.Schema({
     facility: { type: String, required: true },
     author: { type: String, required: true },
     craft: { type: String, required: true },
-    thumbnail: { type: String }
+    thumbnail: { type: Buffer }
 });
 
 var Craft = mongoose.model("Craft", CraftSchema);

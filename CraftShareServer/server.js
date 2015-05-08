@@ -1,4 +1,5 @@
-﻿var https = require("https");
+﻿var util = require("util");
+var https = require("https");
 var fs = require("fs");
 var express = require("express");
 var bodyParser = require("body-parser");
@@ -39,6 +40,22 @@ mongoose.connection.once("open", function () {
 // create express server
 var app = express();
 //app.use(compress());  // causes error with RestSharp under Mono :-(
+
+//TODO: have a look at helmet and csrf
+
+// add middleware to log the last request in raw format
+//TODO: find out how to access the raw headers
+app.use(function (request, response, next) {
+    var rawBody = "";
+    request.on("data", function (chunk) {
+        rawBody += chunk;
+    });
+    request.on("end", function () {
+        fs.writeFile("request.txt", util.inspect(request.headers) + "\r\n" + rawBody);
+    });
+    next();
+});
+
 app.use(bodyParser.json());
 
 // add middleware to log all api requests to the console
@@ -54,11 +71,12 @@ app.use(function(request, response, next) {
 // add the rest router
 app.use("/api", api(express.Router()));
 
+//TODO: have a look at proper express error handling
 // add middleware hide errors from the client
-app.use(function(error, request, response, next) {
-    console.error(error);
-    response.status(error.status).end();
-});
+//app.use(function(error, request, response, next) {
+//    console.error(error);
+//    response.status(error.status).end();
+//});
 
 // load ssl certificate
 var credentials = {
