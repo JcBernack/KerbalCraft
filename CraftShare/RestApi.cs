@@ -30,7 +30,7 @@ namespace CraftShare
         {
             return new RestRequest(resource, method)
             {
-                Timeout = 2000,
+                Timeout = 5000,
                 RequestFormat = DataFormat.Json,
                 DateFormat = "yyyy-MM-ddTHH:mm:ss.fffZ"
             };

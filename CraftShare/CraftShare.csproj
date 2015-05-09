@@ -71,7 +71,9 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>rd /Q /S "$(TargetDir)Data"
-xcopy "$(ProjectDir)Data" "$(TargetDir)Data" /E /R /K /Y /I /D /H</PostBuildEvent>
+xcopy "$(ProjectDir)Data" "$(TargetDir)Data" /E /R /K /Y /I /D /H
+cd "$(TargetDir)"
+"C:\Program Files (x86)\Unity\Editor\Data\MonoBleedingEdge\bin\cli.bat" "C:\Program Files (x86)\Unity\Editor\Data\MonoBleedingEdge\lib\mono\4.0\pdb2mdb.exe" "$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

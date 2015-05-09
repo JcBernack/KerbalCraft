@@ -3,8 +3,9 @@ var https = require("https");
 var fs = require("fs");
 var express = require("express");
 var bodyParser = require("body-parser");
+var helmet = require("helmet");
+//var compress = require("compression");
 var mongoose = require("mongoose");
-var compress = require("compression");
 var argv = require("minimist")(process.argv.slice(2));
 var api = require("./api");
 
@@ -39,22 +40,21 @@ mongoose.connection.once("open", function () {
 
 // create express server
 var app = express();
-//app.use(compress());  // causes error with RestSharp under Mono :-(
-
-//TODO: have a look at helmet and csrf
+app.use(helmet());
+//app.use(compress());  // causes error under Unity's version of Mono: "EntryPointNotFoundException : CreateZStream"
 
 // add middleware to log the last request in raw format
 //TODO: find out how to access the raw headers
-app.use(function (request, response, next) {
-    var rawBody = "";
-    request.on("data", function (chunk) {
-        rawBody += chunk;
-    });
-    request.on("end", function () {
-        fs.writeFile("request.txt", util.inspect(request.headers) + "\r\n" + rawBody);
-    });
-    next();
-});
+//app.use(function (request, response, next) {
+//    var rawBody = "";
+//    request.on("data", function (chunk) {
+//        rawBody += chunk;
+//    });
+//    request.on("end", function () {
+//        fs.writeFile("request.txt", util.inspect(request.headers) + "\r\n" + rawBody);
+//    });
+//    next();
+//});
 
 app.use(bodyParser.json());
 

@@ -88,14 +88,14 @@ module.exports = function (router) {
                 console.log("Request aborted.");
                 return response.status(413).end();
             }
-            // prevent manipulating the _id or date field
-            delete request.body._id;
-            delete request.body.date;
             // create craft document and save it to the database
-            var input = request.body;
-            input.craft = craftData.buffer;
-            input.thumbnail = thumbnail.buffer;
-            model.Craft.create(input, function (error, craft) {
+            model.Craft.create({
+                name: request.body.name,
+                facility: request.body.facility,
+                author: request.body.author,
+                craft: craftData.buffer,
+                thumbnail: thumbnail.buffer
+            }, function (error, craft) {
                 if (error) return handleError(error, response);
                 // return it back to client on success with updated fields like _id and date but without the binary data fields
                 var ret = craft.toObject();
