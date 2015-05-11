@@ -1,6 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using RestSharp;
 using UnityEngine;
 
 namespace CraftShare
@@ -22,7 +23,7 @@ namespace CraftShare
         private int _pageLength;
 
         public MainWindow()
-            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "CraftShare")
+            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "CraftShare v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(2))
         {
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
             ResetState();
@@ -32,11 +33,11 @@ namespace CraftShare
 
         private void ResetState()
         {
+            _craftList = null;
+            _selectedCraft = null;
             _tableMessage = "List not loaded.";
             _pageSkip = 0;
             _pageLength = 0;
-            _craftList = null;
-            _selectedCraft = null;
         }
 
         protected void OnShow()
@@ -47,6 +48,8 @@ namespace CraftShare
 
         private void OnSettingsChanged()
         {
+            // remove any previous content and state
+            ResetState();
             // update the list when the settings are changed and the window is already open
             if (Visible) UpdateCraftList();
         }
@@ -70,9 +73,8 @@ namespace CraftShare
                 _pageSkip += _pageLimit;
                 UpdateCraftList();
             }
-            if (GUILayout.Button("Refresh list"))
+            if (GUILayout.Button("Refresh page"))
             {
-                _pageSkip = 0;
                 UpdateCraftList();
             }
             if (GUILayout.Button("Share current craft"))
@@ -93,29 +95,32 @@ namespace CraftShare
 
         private void UpdateCraftList()
         {
-            ResetWindowSize();
-            try
+            _tableMessage = "loading..";
+            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse<List<SharedCraft>> response)
             {
-                _craftList = RestApi.GetCraft(_pageSkip, _pageLimit);
-                if (_craftList == null)
+                if (response.ErrorException != null)
+                {
+                    //TODO: somehow there is an ArgumentException related to a missing "content-type" when an empty list is returned
+                    Debug.LogError("CraftShare: failed to load craft list.");
+                    Debug.LogException(response.ErrorException);
+                    _craftList = null;
+                    _pageLength = 0;
+                    _tableMessage = "Failed to load list, maybe check the settings.";
+                    return;
+                }
+                if (response.Data == null || response.Data.Count == 0)
                 {
                     _pageLength = 0;
                     _tableMessage = "There is nothing here.";
                 }
                 else
                 {
-                    _pageLength = _craftList.Count;
+                    _pageLength = response.Data.Count;
                 }
+                _craftList = response.Data;
                 Debug.Log(string.Format("CraftShare: Received {0} entries.", _pageLength));
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError("CraftShare: failed to load craft list.");
-                Debug.LogException(ex);
-                _craftList = null;
-                _pageLength = 0;
-                _tableMessage = "Failed to load list, maybe check the settings.";
-            }
+                ResetWindowSize();
+            });
         }
 
         private void DrawLeftSide()
@@ -157,21 +162,33 @@ namespace CraftShare
 
         private void SelectCraft(SharedCraft craft)
         {
-            ResetWindowSize();
+            // change the selected craft
             _selectedCraft = craft;
-            try
+            // skip the request if the thumbnail was previously loaded
+            if (_selectedCraft.ThumbnailCache != null)
             {
-                if (_selectedCraft.ThumbnailCache == null)
+                UpdateThumbnail(craft);
+                return;
+            }
+            RestApi.GetThumbnail(craft._id, delegate(IRestResponse response)
+            {
+                if (response.ErrorException != null)
                 {
-                    _selectedCraft.ThumbnailCache = RestApi.GetThumbnail(_selectedCraft._id);
+                    Debug.LogWarning("CraftShare: unable to load thumbnail for: " + craft._id);
+                    Debug.LogException(response.ErrorException);
+                    return;
                 }
-                _thumbnail.LoadImage(_selectedCraft.ThumbnailCache);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning("CraftShare: unable to load thumbnail for: " + _selectedCraft._id);
-                Debug.LogException(ex);
-            }
+                craft.ThumbnailCache = response.RawBytes;
+                UpdateThumbnail(craft);
+            });
+        }
+
+        private void UpdateThumbnail(SharedCraft craft)
+        {
+            // prevent race condition
+            if (_selectedCraft != craft) return;
+            _thumbnail.LoadImage(craft.ThumbnailCache);
+            ResetWindowSize();
         }
 
         private void DrawRightSide()
@@ -203,16 +220,20 @@ namespace CraftShare
             if (GUILayout.Button("Delete"))
             {
                 Debug.Log("CraftShare: deleting craft craft: " + _selectedCraft._id);
-                try
+                RestApi.DeleteCraft(_selectedCraft._id, delegate(IRestResponse response)
                 {
-                    RestApi.DeleteCraft(_selectedCraft._id);
-                }
-                catch (Exception)
-                {
-                    Debug.LogWarning("CraftShare: deletion failed");
-                }
+                    if (response.ErrorException != null)
+                    {
+                        Debug.LogWarning("CraftShare: deletion failed");
+                        Debug.LogException(response.ErrorException);
+                        return;
+                    }
+                    Debug.Log("CraftShare: delete successful");
+                    // update list after deletion
+                    UpdateCraftList();
+                });
+                // deselect to reduce chance of double-delete
                 _selectedCraft = null;
-                UpdateCraftList();
             }
             // merge is only available when there something in the editor to merge into
             var merge = false;
@@ -221,31 +242,40 @@ namespace CraftShare
             var load = GUILayout.Button("Load");
             if (merge || load)
             {
-                LoadSelectedCraft(merge);
+                RequestCraftData(_selectedCraft, merge);
             }
             GUILayout.EndHorizontal();
         }
 
-        private void LoadSelectedCraft(bool merge)
+        private void RequestCraftData(SharedCraft craft, bool merge)
         {
-            if (_selectedCraft.CraftCache == null)
+            if (craft.CraftCache != null)
             {
-                try
-                {
-                    Debug.Log("CraftShare: loading craft: " + _selectedCraft._id);
-                    _selectedCraft.CraftCache = RestApi.GetCraft(_selectedCraft._id);
-                    Debug.Log("CraftShare: craft characters loaded: " + _selectedCraft.CraftCache.Length);
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError("CraftShare: craft download failed");
-                    Debug.LogException(ex);
-                    return;
-                }
+                LoadCraft(craft, merge);
             }
+            else
+            {
+                Debug.Log("CraftShare: loading craft: " + craft._id);
+                RestApi.GetCraft(craft._id, delegate(IRestResponse response)
+                {
+                    if (response.ErrorException != null)
+                    {
+                        Debug.LogError("CraftShare: craft download failed");
+                        Debug.LogException(response.ErrorException);
+                        return;
+                    }
+                    craft.CraftCache = CLZF2.Decompress(response.RawBytes);
+                    Debug.Log("CraftShare: craft bytes loaded: " + craft.CraftCache.Length);
+                    LoadCraft(craft, merge);
+                });
+            }
+        }
+
+        private void LoadCraft(SharedCraft craft, bool merge)
+        {
             //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
-            File.WriteAllBytes(craftPath, _selectedCraft.CraftCache);
+            File.WriteAllBytes(craftPath, craft.CraftCache);
             Debug.Log("CraftShare: craft written to: " + craftPath);
             if (merge)
             {
@@ -271,7 +301,7 @@ namespace CraftShare
             // update the thumbnail
             ThumbnailHelper.CaptureThumbnail(ship, ModGlobals.ThumbnailResolution, ModGlobals.PluginDataPath, "thumbnail");
             // prepare binary data of the craft and thumbnail
-            var craftData = File.ReadAllBytes(craftPath);
+            var craftData = CLZF2.Compress(File.ReadAllBytes(craftPath));
             var thumbnail = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
             //TODO: find a way to get thumbnail and craft data without file access
             // create transfer object
@@ -281,20 +311,21 @@ namespace CraftShare
                 facility = ship.shipFacility.ToString(),
                 author = ModGlobals.AuthorName
             };
-            try
+            // upload the craft
+            Debug.Log("CraftShare: uploading craft");
+            RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<SharedCraft> response)
             {
-                // upload the craft
-                Debug.Log("CraftShare: uploading craft");
-                craft = RestApi.PostCraft(craft, craftData, thumbnail);
+                if (response.ErrorException != null)
+                {
+                    Debug.LogError("CraftShare: sharing craft failed");
+                    Debug.LogException(response.ErrorException);
+                    return;
+                }
+                craft = response.Data;
                 Debug.Log("CraftShare: new shared craft ID: " + craft._id);
                 // refresh list to reflect the new entry
                 UpdateCraftList();
-            }
-            catch(Exception ex)
-            {
-                Debug.LogError("CraftShare: sharing craft failed");
-                Debug.LogException(ex);
-            }
+            });
         }
     }
 }

@@ -26,7 +26,12 @@ namespace CraftShare
 
         public void OnGUI()
         {
+            // do absolutely nothing if the current scene is not an editor
+            if (!HighLogic.LoadedSceneIsEditor) return;
+            // make sure global ui elements are initialized
             ModGlobals.InitializeGUI();
+            // handle asynchronous responses
+            RestApi.HandleResponses();
         }
 
         private void AddLauncherButton()
@@ -37,6 +42,9 @@ namespace CraftShare
             ModGlobals.SettingsWindow.Hide += OnHide;
         }
 
+        /// <summary>
+        /// Make sure the application launcher button is in its false state when both windows are closed.
+        /// </summary>
         private void OnHide()
         {
             if (!ModGlobals.MainWindow.Visible && !ModGlobals.SettingsWindow.Visible)
@@ -45,9 +53,11 @@ namespace CraftShare
             }
         }
 
+        /// <summary>
+        /// Open window when the application launcher button is pressed. If no settings were found the settings window is opened, otherwise the main window.
+        /// </summary>
         private void OnTrue()
         {
-            ModGlobals.SettingsChange -= OnTrue;
             if (ModGlobals.SettingsLoaded)
             {
                 ModGlobals.MainWindow.Open();
@@ -55,7 +65,6 @@ namespace CraftShare
             else
             {
                 ModGlobals.SettingsWindow.Open();
-                ModGlobals.SettingsChange += OnTrue;
             }
         }
 

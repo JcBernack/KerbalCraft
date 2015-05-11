@@ -49,6 +49,8 @@ namespace CraftShare
             // create windows
             MainWindow = new MainWindow();
             SettingsWindow = new SettingsWindow();
+            // automatically open the main window when the settings were changed, i.e. the user clicked "apply" in the settings window
+            SettingsChange += MainWindow.Open;
         }
 
         /// <summary>
@@ -94,9 +96,7 @@ namespace CraftShare
                 HostAddress = config.GetValue("HostAddress");
                 AuthorName = config.GetValue("AuthorName");
                 Debug.Log("CraftShare: configuration loaded");
-                SettingsLoaded = true;
-                SetHostAddress(HostAddress);
-                if (SettingsChange != null) SettingsChange();
+                ApplySettings(HostAddress);
             }
             else
             {
@@ -118,7 +118,6 @@ namespace CraftShare
                 HostAddress = hostAddress;
                 AuthorName = authorName;
                 Debug.Log("CraftShare: configuration saved");
-                SettingsLoaded = true;
             }
             catch (Exception ex)
             {
@@ -126,14 +125,15 @@ namespace CraftShare
                 Debug.LogException(ex);
                 return;
             }
-            SetHostAddress(HostAddress);
-            if (SettingsChange != null) SettingsChange();
+            ApplySettings(HostAddress);
         }
 
-        private static void SetHostAddress(string hostAddress)
+        private static void ApplySettings(string hostAddress)
         {
+            SettingsLoaded = true;
             RestApi.SetHostAddress(HostAddress);
             Debug.Log("CraftShare: changed host to " + hostAddress);
+            if (SettingsChange != null) SettingsChange();
         }
     }
 }

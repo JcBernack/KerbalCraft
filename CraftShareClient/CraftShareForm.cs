@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using CraftShare;
+using RestSharp;
 
 namespace CraftShareClient
 {
@@ -17,7 +20,13 @@ namespace CraftShareClient
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var crafts = RestApi.GetCraft(0, 5);
+            var handle = RestApi.GetCraft(0, 5, delegate(IRestResponse<List<SharedCraft>> response)
+            {
+                if (response.ErrorException != null) throw response.ErrorException;
+                var crafts = response.Data;
+                Debugger.Break();
+                if (crafts != null && crafts.Count > 0) textBox1.Text = crafts[0]._id;
+            });
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -30,19 +39,36 @@ namespace CraftShareClient
             };
             var thumbnail = File.ReadAllBytes("thumbnail.png");
             var craftData = File.ReadAllBytes("landerOriginal.txt");
-            craft = RestApi.PostCraft(craft, craftData, thumbnail);
+            var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<SharedCraft> response)
+            {
+                if (response.ErrorException != null) throw response.ErrorException;
+                craft = response.Data;
+                Debugger.Break();
+            });
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var data = RestApi.GetCraft(textBox1.Text);
-            var craft = Encoding.UTF8.GetString(data);
+            var handle = RestApi.GetCraft(textBox1.Text, delegate(IRestResponse response)
+            {
+                var craft = Encoding.UTF8.GetString(CLZF2.Decompress(response.RawBytes));
+                Debugger.Break();
+            });
         }
 
         private void button4_Click(object sender, EventArgs e)
         {
-            var result = RestApi.GetThumbnail(textBox1.Text);
-            File.WriteAllBytes("download.png", result);
+            var handle = RestApi.GetThumbnail(textBox1.Text, delegate(IRestResponse response)
+            {
+                File.WriteAllBytes("download.png", response.RawBytes);
+                Debugger.Break();
+            });
+            
+        }
+
+        private void timer1_Tick(object sender, EventArgs e)
+        {
+            RestApi.HandleResponses();
         }
     }
 }
