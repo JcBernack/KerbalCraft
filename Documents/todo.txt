@@ -1,11 +1,9 @@
 # Bugs
 Mongoose throws uncaught exception when a validation error occurs, currently just fixed with a workaround
-Maybe refactor the window handling to not use the RenderingManager anymore but instead use the OnGUI event of CraftListMod
 
 # Todo
 More details about the ships in the list
 Refactor and cleanup relations between ModGlobals, CraftListMod, MainWindow and SettingsWindow
-Refactor parts of MainWindow to SharedCraft, e.g. RequestCraftData, LoadCraft, ShareSelectedCraft, maybe also thumbnail related stuff
 
 # Ideas
 Add features to make a public server feasible:

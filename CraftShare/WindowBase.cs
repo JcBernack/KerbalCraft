@@ -34,7 +34,6 @@ namespace CraftShare
         {
             if (Visible) return;
             Visible = true;
-            RenderingManager.AddToPostDrawQueue(0, OnGUI);
             if (Show != null) Show();
         }
 
@@ -45,12 +44,12 @@ namespace CraftShare
         {
             if (!Visible) return;
             Visible = false;
-            RenderingManager.RemoveFromPostDrawQueue(0, OnGUI);
             if (Hide != null) Hide();
         }
 
-        private void OnGUI()
+        public void OnGUI()
         {
+            if (!Visible) return;
             if (!Initialized)
             {
                 Initialized = true;

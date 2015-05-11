@@ -77,7 +77,7 @@ namespace CraftShare
             {
                 UpdateCraftList();
             }
-            if (GUILayout.Button("Share current craft"))
+            if (HighLogic.LoadedSceneIsEditor && GUILayout.Button("Share current craft"))
             {
                 ShareCurrentCraft();
             }
@@ -100,7 +100,6 @@ namespace CraftShare
             {
                 if (response.ErrorException != null)
                 {
-                    //TODO: somehow there is an ArgumentException related to a missing "content-type" when an empty list is returned
                     Debug.LogError("CraftShare: failed to load craft list.");
                     Debug.LogException(response.ErrorException);
                     _craftList = null;
@@ -235,14 +234,18 @@ namespace CraftShare
                 // deselect to reduce chance of double-delete
                 _selectedCraft = null;
             }
-            // merge is only available when there something in the editor to merge into
-            var merge = false;
-            if (EditorLogic.fetch.ship.Count > 0) merge = GUILayout.Button("Merge");
-            // load is always available
-            var load = GUILayout.Button("Load");
-            if (merge || load)
+            // skip the options to load the craft if not in an editor
+            if (HighLogic.LoadedSceneIsEditor)
             {
-                RequestCraftData(_selectedCraft, merge);
+                // merge is only available when there something in the editor to merge into
+                var merge = false;
+                if (EditorLogic.fetch.ship.Count > 0) merge = GUILayout.Button("Merge");
+                // load is always available
+                var load = GUILayout.Button("Load");
+                if (merge || load)
+                {
+                    RequestCraftData(_selectedCraft, merge);
+                }
             }
             GUILayout.EndHorizontal();
         }
@@ -291,7 +294,6 @@ namespace CraftShare
         private void ShareCurrentCraft()
         {
             var ship = EditorLogic.fetch.ship;
-            //TODO: check if ship.Count also contains unattached parts
             if (ship.Count == 0) return;
             if (ship.shipName.Length == 0) return;
             if (ModGlobals.AuthorName.Length == 0) return;

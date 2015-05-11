@@ -2,11 +2,15 @@
 
 namespace CraftShare
 {
+#if DEBUG
+    [KSPAddon(KSPAddon.Startup.MainMenu, true)]
+#else
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
+#endif
     public class CraftListMod
         : MonoBehaviour
     {
-        private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.SPH | ApplicationLauncher.AppScenes.VAB;
+        private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.ALWAYS;
 
         public ApplicationLauncherButton AppLauncherButton;
 
@@ -14,6 +18,9 @@ namespace CraftShare
         {
             // initialize globally used objects
             ModGlobals.Initialize();
+            // hook up events
+            ModGlobals.MainWindow.Hide += OnHide;
+            ModGlobals.SettingsWindow.Hide += OnHide;
             // add a button to the application launcher
             if (ApplicationLauncher.Ready) AddLauncherButton();
             else GameEvents.onGUIApplicationLauncherReady.Add(AddLauncherButton);
@@ -22,24 +29,27 @@ namespace CraftShare
         public void Start()
         {
             DontDestroyOnLoad(this);
+#if DEBUG
+            OnTrue();
+#endif
         }
 
         public void OnGUI()
         {
-            // do absolutely nothing if the current scene is not an editor
-            if (!HighLogic.LoadedSceneIsEditor) return;
             // make sure global ui elements are initialized
             ModGlobals.InitializeGUI();
             // handle asynchronous responses
             RestApi.HandleResponses();
+            // render windows
+            ModGlobals.MainWindow.OnGUI();
+            ModGlobals.SettingsWindow.OnGUI();
         }
 
         private void AddLauncherButton()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
+            Debug.Log("CraftShare: adding button to ApplicationLauncher");
             AppLauncherButton = ApplicationLauncher.Instance.AddModApplication(OnTrue, OnFalse, null, null, null, OnDisable, VisibleInScenes, ModGlobals.IconSmall);
-            ModGlobals.MainWindow.Hide += OnHide;
-            ModGlobals.SettingsWindow.Hide += OnHide;
         }
 
         /// <summary>

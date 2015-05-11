@@ -54,6 +54,8 @@ namespace CraftShare
         /// </summary>
         protected void PreventEditorClickthrough()
         {
+            // prevent errors when not in an editor
+            if (!HighLogic.LoadedSceneIsEditor) return;
             var mouseOverWindow = Rect.Contains(new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y));
             if (!_inputsLocked && mouseOverWindow)
             {
@@ -69,6 +71,8 @@ namespace CraftShare
 
         private void OnClose()
         {
+            // prevent errors when not in an editor
+            if (!HighLogic.LoadedSceneIsEditor) return;
             // prevent the UI from being locked forever when the window is closed while the mouse is over the window
             // e.g. when the user clicks a "close" button on the window itself
             if (_inputsLocked) EditorLogic.fetch.Unlock(_lockID);
