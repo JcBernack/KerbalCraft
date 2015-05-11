@@ -65,6 +65,13 @@ app.use(function(request, response, next) {
     //console.log(request.headers);
     // log request body
     //console.dir(request.body);
+    // monkey patch the response.end function to log all responses
+    var originalEnd = response.end;
+    response.end = function () {
+        var value = originalEnd.apply(this, arguments);
+        console.log("Status", response.statusCode);
+        return value;
+    }
     next();
 });
 

@@ -24,7 +24,6 @@ module.exports = function (router) {
         var limit = queryInt(request, "limit", 20, 1, 50);
         model.Craft.find(null, { craft: false, thumbnail: false, __v: false }, { sort: { date: -1 }, skip: skip, limit: limit }, function (error, crafts) {
             if (error) return handleError(error, response);
-            if (!crafts || crafts.length < 1) return response.status(404).end();
             response.send(crafts);
         });
     });
