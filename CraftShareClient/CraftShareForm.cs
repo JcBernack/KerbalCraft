@@ -33,12 +33,10 @@ namespace CraftShareClient
         {
             var craft = new SharedCraft
             {
-                name = "Trollcraft",
-                facility = "VAB",
                 author = "Client app"
             };
+            var craftData = CLZF2.Compress(File.ReadAllBytes("landerOriginal.txt"));
             var thumbnail = File.ReadAllBytes("thumbnail.png");
-            var craftData = File.ReadAllBytes("landerOriginal.txt");
             var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<SharedCraft> response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;

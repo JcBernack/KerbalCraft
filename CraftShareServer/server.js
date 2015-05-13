@@ -1,4 +1,5 @@
-﻿var util = require("util");
+﻿var argv = require("minimist")(process.argv.slice(2));
+var util = require("util");
 var https = require("https");
 var fs = require("fs");
 var express = require("express");
@@ -6,19 +7,15 @@ var bodyParser = require("body-parser");
 var helmet = require("helmet");
 //var compress = require("compression");
 var mongoose = require("mongoose");
-var argv = require("minimist")(process.argv.slice(2));
 var api = require("./api");
 
-function printUsage() {
+if (argv.h || argv.help) {
     console.log("Usage:");
     console.log("-p # or --port # Specify the port to listen on.");
     console.log("-d # or --database # Specify the database name to use, default is \"craftshare\"");
     console.log("-s # or --passphrase # Specify the passphrase for the certificate.");
+    console.log("-h # or --help # Displays this message.");
     process.exit(0);
-}
-
-if (argv.h || argv.help) {
-    printUsage();
 }
 
 if (!argv.p && !argv.port) {

@@ -132,7 +132,7 @@ namespace CraftShare
         private void DrawTable()
         {
             // add table headers
-            var cells = new List<string> { "Name", "Facility", "Author" };
+            var cells = new List<string> { "Name", "Type", "Author" };
             var dimension = cells.Count;
             if (_pageLength == 0)
             {
@@ -143,7 +143,7 @@ namespace CraftShare
                 // add table data
                 foreach (var craft in _craftList)
                 {
-                    cells.AddRange(new[] { craft.name, craft.facility, craft.author });
+                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author });
                 }
             }
             // draw table
@@ -210,10 +210,11 @@ namespace CraftShare
             // draw details table
             var cells = new[]
             {
-                "Name:", "Facility:", "Author:", "Date:",
-                _selectedCraft.name, _selectedCraft.facility, _selectedCraft.author, _selectedCraft.date.ToLongDateString()
+                "Name:", "Type:", "Author:", "Date:", "Size:", "Part count:", "KSP version:", "Description:",
+                _selectedCraft.info.ship, _selectedCraft.info.type, _selectedCraft.author, _selectedCraft.date.ToLongDateString(),
+                _selectedCraft.info.size, _selectedCraft.info.partCount, _selectedCraft.info.version, _selectedCraft.info.description
             };
-            GUIHelper.Grid(4, true, cells);
+            GUIHelper.Grid(8, true, cells);
             GUILayout.BeginHorizontal();
             // draw delete button
             if (GUILayout.Button("Delete"))
@@ -309,8 +310,6 @@ namespace CraftShare
             // create transfer object
             var craft = new SharedCraft
             {
-                name = ship.shipName,
-                facility = ship.shipFacility.ToString(),
                 author = ModGlobals.AuthorName
             };
             // upload the craft

@@ -97,7 +97,7 @@ namespace CraftShare
         /// <returns>A handle to the asynchronous request.</returns>
         public static RestRequestAsyncHandle GetCraft(string id, Action<IRestResponse> callback)
         {
-            var request = CreateRequest("craft/data/{id}", Method.GET);
+            var request = CreateRequest("craft/{id}/data", Method.GET);
             request.AddUrlSegment("id", id);
             return Execute(request, callback);
         }
@@ -110,7 +110,7 @@ namespace CraftShare
         /// <returns>A handle to the asynchronous request.</returns>
         public static RestRequestAsyncHandle GetThumbnail(string id, Action<IRestResponse> callback)
         {
-            var request = CreateRequest("craft/thumbnail/{id}", Method.GET);
+            var request = CreateRequest("craft/{id}/thumbnail", Method.GET);
             request.AddUrlSegment("id", id);
             return Execute(request, callback);
         }
@@ -139,7 +139,7 @@ namespace CraftShare
         {
             var request = CreateRequest("craft/", Method.POST);
             request.AddObject(craft);
-            request.AddFile("craftData", CLZF2.Compress(craftData), "craftData.craft");
+            request.AddFile("craftData", craftData, "craftData.craft");
             request.AddFile("thumbnail", thumbnail, "thumbnail.png");
             return Execute(request, callback);
         }

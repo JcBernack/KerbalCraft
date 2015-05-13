@@ -56,7 +56,6 @@
     <Compile Include="RestApi.cs" />
     <Compile Include="SettingsWindow.cs" />
     <Compile Include="SharedCraft.cs" />
-    <Compile Include="Compressor.cs" />
     <Compile Include="ThumbnailHelper.cs" />
     <Compile Include="WindowBase.cs" />
     <Compile Include="Window.cs" />

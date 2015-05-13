@@ -3,9 +3,7 @@ Mongoose throws uncaught exception when a validation error occurs, currently jus
 
 # Todo
 More details about the ships in the list
- - Build a parser for the .craft files on the server side which submits information to the database on craft POST
- - Build an additional script to crawl through the whole database and invoke the parser for each entry
- - The script can be used to update parsed information on craft already in the database when the parser was updated
+ - Information from the used parts would be great
 Refactor and cleanup relations between ModGlobals, CraftListMod, MainWindow and SettingsWindow
 
 # Ideas

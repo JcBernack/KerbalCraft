@@ -1,4 +1,4 @@
-﻿var fs = require("fs");
+﻿var lzf = require("lzf");
 var multer = require("multer");
 var model = require("./model.js");
 
@@ -22,24 +22,24 @@ module.exports = function (router) {
     router.get("/craft", function (request, response) {
         var skip = queryInt(request, "skip", 0, 0);
         var limit = queryInt(request, "limit", 20, 1, 50);
-        model.Craft.find(null, { craft: false, thumbnail: false, __v: false }, { sort: { date: -1 }, skip: skip, limit: limit }, function (error, crafts) {
+        model.Craft.find(null, { date: true, author: true, info: true }, { sort: { date: -1 }, skip: skip, limit: limit }, function (error, crafts) {
             if (error) return handleError(error, response);
             response.send(crafts);
         });
     });
     
     // GET craft data
-    router.get("/craft/data/:id", function (request, response) {
+    router.get("/craft/:id/data", function (request, response) {
         model.Craft.findById(request.params.id, { _id: false, craft: true }, function (error, craft) {
             if (error) return handleError(error, response);
             if (!craft) return response.status(404).end();
             response.set("Content-Type", "text/plain");
-            response.send(craft.craft);
+            response.send(lzf.compress(new Buffer(craft.craft)));
         });
     });
     
     // GET craft thumbnail
-    router.get("/craft/thumbnail/:id", function (request, response) {
+    router.get("/craft/:id/thumbnail", function (request, response) {
         model.Craft.findById(request.params.id, { _id: false, thumbnail: true }, function (error, craft) {
             if (error) return handleError(error, response);
             if (!craft) return response.status(404).end();
@@ -50,7 +50,8 @@ module.exports = function (router) {
     
     // DELETE craft
     router.delete("/craft/:id", function (request, response) {
-        model.Craft.findByIdAndRemove(request.params.id, { select: { craft: false, thumbnail: false, __v: false } }, function (error, craft) {
+        //TODO: find out how to remove without selecting the removed entry
+        model.Craft.findByIdAndRemove(request.params.id, { select: { _id: true } }, function (error, craft) {
             if (error) return handleError(error, response);
             if (!craft) return response.status(404).end();
             response.status(204).end();
@@ -87,16 +88,18 @@ module.exports = function (router) {
                 console.log("Request aborted.");
                 return response.status(413).end();
             }
-            // create craft document and save it to the database
-            model.Craft.create({
-                name: request.body.name,
-                facility: request.body.facility,
+            // create craft document
+            var craft = new model.Craft({
                 author: request.body.author,
-                craft: craftData.buffer,
+                craft: lzf.decompress(craftData.buffer).toString("utf8"),
                 thumbnail: thumbnail.buffer
-            }, function (error, craft) {
+            });
+            // invoke parser to add craft information
+            craft.parseCraft();
+            // save it to the database
+            craft.save(function (error) {
                 if (error) return handleError(error, response);
-                // return it back to client on success with updated fields like _id and date but without the binary data fields
+                // return the new item back to client with updated fields like _id and date but without the binary data fields
                 var ret = craft.toObject();
                 delete ret.craft;
                 delete ret.thumbnail;
