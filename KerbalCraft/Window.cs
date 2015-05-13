@@ -1,7 +1,7 @@
 ﻿using System.Reflection;
 using UnityEngine;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     /// <summary>
     /// Base class for UI windows.
@@ -29,7 +29,7 @@ namespace CraftShare
             Rect.y = top;
             Title = title;
             _windowID = Random.Range(1000, 2000000) + Assembly.GetExecutingAssembly().FullName.GetHashCode();
-            _lockID = "CraftShare_noclick" + _windowID;
+            _lockID = ModGlobals.ModName + "_noclick_" + _windowID;
             Hide += OnClose;
         }
 

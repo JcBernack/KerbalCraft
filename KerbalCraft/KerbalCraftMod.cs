@@ -1,13 +1,13 @@
 ﻿using UnityEngine;
 
-namespace CraftShare
+namespace KerbalCraft
 {
 #if DEBUG
     [KSPAddon(KSPAddon.Startup.MainMenu, true)]
 #else
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
 #endif
-    public class CraftListMod
+    public class KerbalCraftMod
         : MonoBehaviour
     {
         private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.ALWAYS;
@@ -48,7 +48,7 @@ namespace CraftShare
         private void AddLauncherButton()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
-            Debug.Log("CraftShare: adding button to ApplicationLauncher");
+            Debug.Log("[KerbalCraft] adding button to ApplicationLauncher");
             AppLauncherButton = ApplicationLauncher.Instance.AddModApplication(OnTrue, OnFalse, null, null, null, OnDisable, VisibleInScenes, ModGlobals.IconSmall);
         }
 

@@ -1,4 +1,4 @@
-﻿namespace CraftShare
+﻿namespace KerbalCraft
 {
     public static class ThumbnailHelper
     {

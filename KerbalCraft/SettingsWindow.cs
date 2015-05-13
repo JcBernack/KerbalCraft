@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     public class SettingsWindow
         : Window
@@ -10,7 +10,7 @@ namespace CraftShare
         private string _editAuthorName;
 
         public SettingsWindow()
-            : base(0, 0, "CraftShare - Settings")
+            : base(0, 0, ModGlobals.ModName + " - Settings")
         {
             Show += OnShow;
         }

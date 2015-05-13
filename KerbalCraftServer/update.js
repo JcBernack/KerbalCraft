@@ -4,12 +4,12 @@ var model = require("./model.js");
 
 if (argv.h || argv.help) {
     console.log("Usage:");
-    console.log("-d # or --database # Specify the database name to use, default is \"craftshare\"");
+    console.log("-d # or --database # Specify the database name to use, default is \"kerbalcraft\"");
     process.exit(0);
 }
 
 // connect to database
-mongoose.connect("localhost", argv.d || argv.database || "craftshare");
+mongoose.connect("localhost", argv.d || argv.database || "kerbalcraft");
 
 mongoose.connection.on("error", function (error) {
     console.log("MongoDB error: " + error);

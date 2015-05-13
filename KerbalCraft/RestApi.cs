@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using RestSharp;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     /// <summary>
     /// Handles all the communication with the server.
@@ -81,7 +81,7 @@ namespace CraftShare
         /// <param name="limit">Specifies the number of elements to request from the server. The server does not necessarily respond with the given number of items.</param>
         /// <param name="callback">A callback receiving the response from the server, containing the elements of the craft list.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle GetCraft(int skip, int limit, Action<IRestResponse<List<SharedCraft>>> callback)
+        public static RestRequestAsyncHandle GetCraft(int skip, int limit, Action<IRestResponse<List<CraftData>>> callback)
         {
             var request = CreateRequest("craft/", Method.GET);
             request.AddQueryParameter("skip", skip.ToString());
@@ -135,7 +135,7 @@ namespace CraftShare
         /// <param name="thumbnail">Raw bytes of the thumbnail.</param>
         /// <param name="callback">A callback receiving the response from the server, containing the newly created craft with updated information returned from the server.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle PostCraft(SharedCraft craft, byte[] craftData, byte[] thumbnail, Action<IRestResponse<SharedCraft>> callback)
+        public static RestRequestAsyncHandle PostCraft(CraftData craft, byte[] craftData, byte[] thumbnail, Action<IRestResponse<CraftData>> callback)
         {
             var request = CreateRequest("craft/", Method.POST);
             request.AddObject(craft);

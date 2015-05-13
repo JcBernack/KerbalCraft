@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 
-namespace CraftShareClient
+namespace KerbalCraftTest
 {
     static class Program
     {
@@ -13,7 +13,7 @@ namespace CraftShareClient
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
-            Application.Run(new CraftShareForm());
+            Application.Run(new KerbalCraftForm());
         }
     }
 }

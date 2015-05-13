@@ -1,7 +1,7 @@
 
 #Specific files
-CraftShareServer/node_modules/
-CraftShareServer/Database/
+KerbalCraftServer/node_modules/
+KerbalCraftServer/Database/
 
 #Folders
 Documentation/Reference/*
@@ -40,5 +40,5 @@ obj/
 [Rr]elease*/
 _ReSharper*/
 [Tt]est[Rr]esult*
-/CraftShareServer/.ntvs_analysis.dat
+/KerbalCraftServer/.ntvs_analysis.dat
 /packages

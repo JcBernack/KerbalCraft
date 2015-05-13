@@ -2,13 +2,14 @@
 using System.IO;
 using UnityEngine;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     /// <summary>
     /// Holds all the static data and configuration of the mod.
     /// </summary>
     public static class ModGlobals
     {
+        public const string ModName = "KerbalCraft";
         public const int ThumbnailResolution = 256;
 
         public static MainWindow MainWindow { get; private set; }
@@ -39,12 +40,12 @@ namespace CraftShare
         {
             if (_initialized) return;
             _initialized = true;
-            PluginDataPath = "GameData/CraftShare/PluginData/";
+            PluginDataPath = "GameData/" + ModName + "/PluginData/";
             // make sure the PluginData folder exists
             Directory.CreateDirectory(PluginDataPath);
             ConfigPath = Path.Combine(PluginDataPath, "config.cfg");
-            IconSmall = GameDatabase.Instance.GetTexture("CraftShare/Data/IconSmall", false);
-            IconLarge = GameDatabase.Instance.GetTexture("CraftShare/Data/IconLarge", false);
+            IconSmall = GameDatabase.Instance.GetTexture(ModName + "/Data/IconSmall", false);
+            IconLarge = GameDatabase.Instance.GetTexture(ModName + "/Data/IconLarge", false);
             LoadConfig();
             // create windows
             MainWindow = new MainWindow();
@@ -95,12 +96,12 @@ namespace CraftShare
             {
                 HostAddress = config.GetValue("HostAddress");
                 AuthorName = config.GetValue("AuthorName");
-                Debug.Log("CraftShare: configuration loaded");
+                Debug.Log("[KerbalCraft] configuration loaded");
                 ApplySettings(HostAddress);
             }
             else
             {
-                Debug.LogWarning(string.Format("CraftShare: failed to load configuration from {0}", ConfigPath));
+                Debug.LogWarning(string.Format("[KerbalCraft] failed to load configuration from {0}", ConfigPath));
             }
         }
 
@@ -117,11 +118,11 @@ namespace CraftShare
                 config.Save(ConfigPath);
                 HostAddress = hostAddress;
                 AuthorName = authorName;
-                Debug.Log("CraftShare: configuration saved");
+                Debug.Log("[KerbalCraft] configuration saved");
             }
             catch (Exception ex)
             {
-                Debug.LogWarning(string.Format("CraftShare: failed to save configuration to {0}", ConfigPath));
+                Debug.LogWarning(string.Format("[KerbalCraft] failed to save configuration to {0}", ConfigPath));
                 Debug.LogException(ex);
                 return;
             }
@@ -132,7 +133,7 @@ namespace CraftShare
         {
             SettingsLoaded = true;
             RestApi.SetHostAddress(HostAddress);
-            Debug.Log("CraftShare: changed host to " + hostAddress);
+            Debug.Log("[KerbalCraft] changed host to " + hostAddress);
             if (SettingsChange != null) SettingsChange();
         }
     }

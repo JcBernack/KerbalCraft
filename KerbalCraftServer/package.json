@@ -1,7 +1,7 @@
 {
-  "name": "CraftShareServer",
+  "name": "KerbalCraftServer",
   "version": "0.1.0",
-  "description": "CraftShareServer",
+  "description": "Server part of the KerbalCraft mod for Kerbal Space Program",
   "main": "server.js",
   "author": {
     "name": "Gigo",

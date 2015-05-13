@@ -3,8 +3,8 @@
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">11.0</VisualStudioVersion>
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
-    <Name>CraftShareServer</Name>
-    <RootNamespace>CraftShareServer</RootNamespace>
+    <Name>KerbalCraftServer</Name>
+    <RootNamespace>KerbalCraftServer</RootNamespace>
     <NodejsPort>
     </NodejsPort>
     <ScriptArguments>-p 10412</ScriptArguments>
@@ -14,7 +14,8 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>7aca5c65-31ea-4dac-9b46-3240bcb6f7b6</ProjectGuid>
-    <ProjectHome>.</ProjectHome>
+    <ProjectHome>
+    </ProjectHome>
     <StartupFile>update.js</StartupFile>
     <StartWebBrowser>False</StartWebBrowser>
     <SearchPath>

@@ -4,7 +4,7 @@ using System.Reflection;
 using RestSharp;
 using UnityEngine;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     public class MainWindow
         : Window
@@ -12,8 +12,8 @@ namespace CraftShare
         private const int LeftWidth = 400;
         private const int RightWidth = 250;
 
-        private List<SharedCraft> _craftList;
-        private SharedCraft _selectedCraft;
+        private List<CraftData> _craftList;
+        private CraftData _selectedCraft;
 
         private readonly Texture2D _thumbnail;
         private string _tableMessage;
@@ -23,7 +23,7 @@ namespace CraftShare
         private int _pageLength;
 
         public MainWindow()
-            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "CraftShare v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(2))
+            : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "KerbalCraft v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(2))
         {
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
             ResetState();
@@ -96,11 +96,11 @@ namespace CraftShare
         private void UpdateCraftList()
         {
             _tableMessage = "loading..";
-            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse<List<SharedCraft>> response)
+            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse<List<CraftData>> response)
             {
                 if (response.ErrorException != null)
                 {
-                    Debug.LogError("CraftShare: failed to load craft list.");
+                    Debug.LogError("[KerbalCraft] failed to load craft list.");
                     Debug.LogException(response.ErrorException);
                     _craftList = null;
                     _pageLength = 0;
@@ -117,7 +117,7 @@ namespace CraftShare
                     _pageLength = response.Data.Count;
                 }
                 _craftList = response.Data;
-                Debug.Log(string.Format("CraftShare: Received {0} entries.", _pageLength));
+                Debug.Log(string.Format("[KerbalCraft] Received {0} entries.", _pageLength));
                 ResetWindowSize();
             });
         }
@@ -159,7 +159,7 @@ namespace CraftShare
             GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip+1, _pageSkip + _pageLimit));
         }
 
-        private void SelectCraft(SharedCraft craft)
+        private void SelectCraft(CraftData craft)
         {
             // change the selected craft
             _selectedCraft = craft;
@@ -173,7 +173,7 @@ namespace CraftShare
             {
                 if (response.ErrorException != null)
                 {
-                    Debug.LogWarning("CraftShare: unable to load thumbnail for: " + craft._id);
+                    Debug.LogWarning("[KerbalCraft] unable to load thumbnail for: " + craft._id);
                     Debug.LogException(response.ErrorException);
                     return;
                 }
@@ -182,7 +182,7 @@ namespace CraftShare
             });
         }
 
-        private void UpdateThumbnail(SharedCraft craft)
+        private void UpdateThumbnail(CraftData craft)
         {
             // prevent race condition
             if (_selectedCraft != craft) return;
@@ -219,16 +219,16 @@ namespace CraftShare
             // draw delete button
             if (GUILayout.Button("Delete"))
             {
-                Debug.Log("CraftShare: deleting craft craft: " + _selectedCraft._id);
+                Debug.Log("[KerbalCraft] deleting craft craft: " + _selectedCraft._id);
                 RestApi.DeleteCraft(_selectedCraft._id, delegate(IRestResponse response)
                 {
                     if (response.ErrorException != null)
                     {
-                        Debug.LogWarning("CraftShare: deletion failed");
+                        Debug.LogWarning("[KerbalCraft] deletion failed");
                         Debug.LogException(response.ErrorException);
                         return;
                     }
-                    Debug.Log("CraftShare: delete successful");
+                    Debug.Log("[KerbalCraft] delete successful");
                     // update list after deletion
                     UpdateCraftList();
                 });
@@ -251,7 +251,7 @@ namespace CraftShare
             GUILayout.EndHorizontal();
         }
 
-        private void RequestCraftData(SharedCraft craft, bool merge)
+        private void RequestCraftData(CraftData craft, bool merge)
         {
             if (craft.CraftCache != null)
             {
@@ -259,28 +259,28 @@ namespace CraftShare
             }
             else
             {
-                Debug.Log("CraftShare: loading craft: " + craft._id);
+                Debug.Log("[KerbalCraft] loading craft: " + craft._id);
                 RestApi.GetCraft(craft._id, delegate(IRestResponse response)
                 {
                     if (response.ErrorException != null)
                     {
-                        Debug.LogError("CraftShare: craft download failed");
+                        Debug.LogError("[KerbalCraft] craft download failed");
                         Debug.LogException(response.ErrorException);
                         return;
                     }
                     craft.CraftCache = CLZF2.Decompress(response.RawBytes);
-                    Debug.Log("CraftShare: craft bytes loaded: " + craft.CraftCache.Length);
+                    Debug.Log("[KerbalCraft] craft bytes loaded: " + craft.CraftCache.Length);
                     LoadCraft(craft, merge);
                 });
             }
         }
 
-        private void LoadCraft(SharedCraft craft, bool merge)
+        private void LoadCraft(CraftData craft, bool merge)
         {
             //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
             File.WriteAllBytes(craftPath, craft.CraftCache);
-            Debug.Log("CraftShare: craft written to: " + craftPath);
+            Debug.Log("[KerbalCraft] craft written to: " + craftPath);
             if (merge)
             {
                 var ship = ShipConstruction.LoadShip(craftPath);
@@ -308,22 +308,22 @@ namespace CraftShare
             var thumbnail = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
             //TODO: find a way to get thumbnail and craft data without file access
             // create transfer object
-            var craft = new SharedCraft
+            var craft = new CraftData
             {
                 author = ModGlobals.AuthorName
             };
             // upload the craft
-            Debug.Log("CraftShare: uploading craft");
-            RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<SharedCraft> response)
+            Debug.Log("[KerbalCraft] uploading craft");
+            RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<CraftData> response)
             {
                 if (response.ErrorException != null)
                 {
-                    Debug.LogError("CraftShare: sharing craft failed");
+                    Debug.LogError("[KerbalCraft] sharing craft failed");
                     Debug.LogException(response.ErrorException);
                     return;
                 }
                 craft = response.Data;
-                Debug.Log("CraftShare: new shared craft ID: " + craft._id);
+                Debug.Log("[KerbalCraft] new shared craft ID: " + craft._id);
                 // refresh list to reflect the new entry
                 UpdateCraftList();
             });

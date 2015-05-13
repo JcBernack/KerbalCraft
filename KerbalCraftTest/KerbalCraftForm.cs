@@ -4,15 +4,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows.Forms;
-using CraftShare;
+using KerbalCraft;
 using RestSharp;
 
-namespace CraftShareClient
+namespace KerbalCraftTest
 {
-    public partial class CraftShareForm
+    public partial class KerbalCraftForm
         : Form
     {
-        public CraftShareForm()
+        public KerbalCraftForm()
         {
             InitializeComponent();
             RestApi.SetHostAddress("localhost:10412");
@@ -20,7 +20,7 @@ namespace CraftShareClient
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var handle = RestApi.GetCraft(0, 5, delegate(IRestResponse<List<SharedCraft>> response)
+            var handle = RestApi.GetCraft(0, 5, delegate(IRestResponse<List<CraftData>> response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;
                 var crafts = response.Data;
@@ -31,13 +31,13 @@ namespace CraftShareClient
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var craft = new SharedCraft
+            var craft = new CraftData
             {
                 author = "Client app"
             };
             var craftData = CLZF2.Compress(File.ReadAllBytes("landerOriginal.txt"));
             var thumbnail = File.ReadAllBytes("thumbnail.png");
-            var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<SharedCraft> response)
+            var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<CraftData> response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;
                 craft = response.Data;

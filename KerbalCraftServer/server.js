@@ -12,7 +12,7 @@ var api = require("./api");
 if (argv.h || argv.help) {
     console.log("Usage:");
     console.log("-p # or --port # Specify the port to listen on.");
-    console.log("-d # or --database # Specify the database name to use, default is \"craftshare\"");
+    console.log("-d # or --database # Specify the database name to use, default is \"kerbalcraft\"");
     console.log("-s # or --passphrase # Specify the passphrase for the certificate.");
     console.log("-h # or --help # Displays this message.");
     process.exit(0);
@@ -25,7 +25,7 @@ if (!argv.p && !argv.port) {
 
 // connect to database
 //mongoose.set("debug", true);
-mongoose.connect("localhost", argv.d || argv.database || "craftshare");
+mongoose.connect("localhost", argv.d || argv.database || "kerbalcraft");
 
 mongoose.connection.on("error", function (error) {
     console.log("MongoDB error: " + error);

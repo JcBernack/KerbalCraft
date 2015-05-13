@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CraftShare
+namespace KerbalCraft
 {
     /// <summary>
     /// Base class for UI elements.
