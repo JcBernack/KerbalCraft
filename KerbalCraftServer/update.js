@@ -11,21 +11,21 @@ if (argv.h || argv.help) {
 // connect to database
 mongoose.connect("localhost", argv.d || argv.database || "kerbalcraft");
 
-mongoose.connection.on("error", function (error) {
-    console.log("MongoDB error: " + error);
+mongoose.connection.on("error", function (err) {
+    console.log("MongoDB error: " + err);
 });
 
 mongoose.connection.once("open", function () {
     console.log("Connected to MongoDB");
 });
 
-function handleError(error) {
-    console.log("Error", error);
+function handleError(err) {
+    console.log("Error", err);
 }
 
 // iterate over all craft in the database
-model.Craft.find(null, { craft: true }, function (error, crafts) {
-    if (error) {
+model.Craft.find(null, { craft: true }, function (err, crafts) {
+    if (err) {
         console.log("Error retrieving data from database.");
         return;
     }
@@ -36,10 +36,10 @@ model.Craft.find(null, { craft: true }, function (error, crafts) {
             // invoke parser to update craft information
             crafts[i].parseCraft();
             // save to database
-            crafts[i].save(function(error, craft) {
-                if (error) {
+            crafts[i].save(function(err, craft) {
+                if (err) {
                     console.log("Error saving craft: " + craft._id + ":");
-                    console.log(error);
+                    console.log(err);
                 }
             });
         } catch (ex) {

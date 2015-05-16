@@ -7,7 +7,8 @@ var bodyParser = require("body-parser");
 var helmet = require("helmet");
 //var compress = require("compression");
 var mongoose = require("mongoose");
-var api = require("./api");
+var craftController = require("./controllers/craft");
+var uploadController = require("./controllers/upload");
 
 if (argv.h || argv.help) {
     console.log("Usage:");
@@ -27,8 +28,8 @@ if (!argv.p && !argv.port) {
 //mongoose.set("debug", true);
 mongoose.connect("localhost", argv.d || argv.database || "kerbalcraft");
 
-mongoose.connection.on("error", function (error) {
-    console.log("MongoDB error: " + error);
+mongoose.connection.on("error", function (err) {
+    console.log("MongoDB error: " + err);
 });
 
 mongoose.connection.once("open", function () {
@@ -39,47 +40,42 @@ mongoose.connection.once("open", function () {
 var app = express();
 app.use(helmet());
 //app.use(compress());  // causes error under Unity's version of Mono: "EntryPointNotFoundException : CreateZStream"
-
-// add middleware to log the last request in raw format
-//TODO: find out how to access the raw headers
-//app.use(function (request, response, next) {
-//    var rawBody = "";
-//    request.on("data", function (chunk) {
-//        rawBody += chunk;
-//    });
-//    request.on("end", function () {
-//        fs.writeFile("request.txt", util.inspect(request.headers) + "\r\n" + rawBody);
-//    });
-//    next();
-//});
-
 app.use(bodyParser.json());
 
 // add middleware to log all api requests to the console
-app.use(function(request, response, next) {
+app.use(function(req, res, next) {
     // log http method and url
-    console.log(request.method, request.originalUrl);
-    //console.log(request.headers);
+    console.log(req.method, req.originalUrl);
     // log request body
-    //console.dir(request.body);
+    //console.dir(req.body);
     // monkey patch the response.end function to log all responses
-    var originalEnd = response.end;
-    response.end = function () {
+    var originalEnd = res.end;
+    res.end = function () {
         var value = originalEnd.apply(this, arguments);
-        console.log("Status", response.statusCode);
+        console.log("Status", res.statusCode);
         return value;
     }
     next();
 });
 
 // add the rest router
-app.use("/api", api(express.Router()));
+var router = express.Router();
+router.route("/craft")
+    .post(uploadController.createInMemoryMulter(2, 2097152), craftController.postCraft)
+    .get(craftController.getCraft);
+router.route("/craft/:id/thumbnail")
+    .get(craftController.getCraftThumbnail);
+router.route("/craft/:id/data")
+    .get(craftController.getCraftData);
+router.route("/craft/:id")
+    .delete(craftController.deleteCraft);
+app.use("/api", router);
 
 //TODO: have a look at proper express error handling
 // add middleware hide errors from the client
-//app.use(function(error, request, response, next) {
-//    console.error(error);
-//    response.status(error.status).end();
+//app.use(function(err, req, res, next) {
+//    console.error(err);
+//    res.status(err.status).end();
 //});
 
 // load ssl certificate
@@ -103,6 +99,6 @@ server.listen(port, function() {
 });
 
 // log uncaught exceptions after successful initialization, but stop the application from crashing while the server is up
-process.on("uncaughtException", function (error) {
-    console.log("Caught exception: " + error);
+process.on("uncaughtException", function (err) {
+    console.log("Caught exception: " + err);
 });

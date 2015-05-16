@@ -87,7 +87,6 @@ module.exports = {
         // parse ConfigNodes
         var configNode = new ConfigNode("");
         Parse(lines, 0, configNode);
-        // allow chaining
         return configNode;
     }
 };

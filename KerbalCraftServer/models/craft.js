@@ -1,5 +1,5 @@
 ﻿var mongoose = require("mongoose");
-var parser = require("./config-node-parser");
+var parser = require("../config-node-parser");
 
 var CraftSchema = mongoose.Schema({
     date: { type: Date, default: Date.now },
@@ -30,8 +30,4 @@ CraftSchema.methods.parseCraft = function () {
     return this;
 };
 
-var Craft = mongoose.model("Craft", CraftSchema);
-
-module.exports = {
-    Craft: Craft
-};
+module.exports = mongoose.model("Craft", CraftSchema);

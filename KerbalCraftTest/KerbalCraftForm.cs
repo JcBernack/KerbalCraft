@@ -35,8 +35,8 @@ namespace KerbalCraftTest
             {
                 author = "Client app"
             };
-            var craftData = CLZF2.Compress(File.ReadAllBytes("landerOriginal.txt"));
-            var thumbnail = File.ReadAllBytes("thumbnail.png");
+            var craftData = CLZF2.Compress(File.ReadAllBytes("Munlander.craft"));
+            var thumbnail = File.ReadAllBytes("Munlander.png");
             var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<CraftData> response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;
