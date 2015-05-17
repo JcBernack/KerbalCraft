@@ -88,10 +88,8 @@ router.route("/craft/:id/data")
 router.route("/craft/:id")
     .delete(authController.isAuthenticated, craftController.deleteCraft);
 router.route("/user")
-    .post(userController.postUser)
-    .get(userController.getUser);
-router.route("/empty")
-    .head(authController.isAuthenticated, function(req, res) { res.status(204).end(); });
+    .post(userController.postUser);
+    //.get(userController.getUser);
 app.use("/api", router);
 
 //TODO: have a look at proper express error handling

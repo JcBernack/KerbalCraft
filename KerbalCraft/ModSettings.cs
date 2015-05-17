@@ -10,7 +10,7 @@ namespace KerbalCraft
         public static string Username { get; private set; }
         public static string Password { get; private set; }
 
-        public static event Action ConfigChanged;
+        public static event Action ConfigSaved;
 
         private static readonly string ConfigPath;
 
@@ -29,7 +29,6 @@ namespace KerbalCraft
             Username = username ?? "";
             Password = password ?? "";
             RestApi.SetConfig(HostAddress, Username, Password);
-            if (ConfigChanged != null) ConfigChanged();
         }
 
         /// <summary>
@@ -72,6 +71,7 @@ namespace KerbalCraft
                 Debug.LogWarning(string.Format("[KerbalCraft] failed to save configuration to {0}", ConfigPath));
                 Debug.LogException(ex);
             }
+            if (ConfigSaved != null) ConfigSaved();
         }
     }
 }

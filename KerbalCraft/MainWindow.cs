@@ -30,7 +30,7 @@ namespace KerbalCraft
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
             ResetState();
             Show += OnShow;
-            ModSettings.ConfigChanged += OnSettingsChanged;
+            ModSettings.ConfigSaved += OnConfigSaved;
         }
 
         private void ResetState()
@@ -48,7 +48,7 @@ namespace KerbalCraft
             UpdateCraftList();
         }
 
-        private void OnSettingsChanged()
+        private void OnConfigSaved()
         {
             // remove any previous content and state
             ResetState();

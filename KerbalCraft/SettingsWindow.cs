@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using RestSharp;
 using UnityEngine;
 
@@ -30,6 +31,8 @@ namespace KerbalCraft
             // move the window to the screen center
             Rect.x = Screen.width/2 - Width/2;
             Rect.y = 80;
+            // reset the working state in case it got stuck
+            _working = false;
         }
 
         protected override void DrawMenu(int id)
@@ -64,61 +67,45 @@ namespace KerbalCraft
             _editUsername = GUILayout.TextField(_editUsername, 30);
             GUILayout.Label("Password:", ModGlobals.HeadStyle);
             _editPassword = GUILayout.PasswordField(_editPassword, '#', 50);
+            GUILayout.Label("Login will either verify your credentials or create a new user if it is not existing. If the username is already taken but the password does not match login will fail. The settings are saved on success.");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Register"))
-            {
-                _working = true;
-                ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
-                RestApi.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
-                {
-                    _working = false;
-                    if (response.ErrorException != null)
-                    {
-                        Debug.LogWarning("[KerbalCraft] register user failed");
-                        Debug.LogException(response.ErrorException);
-                        _message = "Connection failed";
-                        return;
-                    }
-                    switch (response.StatusCode)
-                    {
-                        case HttpStatusCode.NoContent:
-                            _message = "Success!";
-                            ModSettings.SaveConfig();
-                            break;
-                        default:
-                            _message = string.Format("Error (HTTP Code {0})", response.StatusCode);
-                            break;
-                    }
-                });
-            }
             if (GUILayout.Button("Login"))
             {
                 _working = true;
                 ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
-                RestApi.CheckConnection(delegate(IRestResponse response)
+                try
+                {
+                    RestApi.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
+                    {
+                        _working = false;
+                        if (response.ErrorException != null)
+                        {
+                            Debug.LogWarning("[KerbalCraft] login (transport error)");
+                            Debug.LogException(response.ErrorException);
+                            _message = "Connection failed";
+                            return;
+                        }
+                        switch (response.StatusCode)
+                        {
+                            case HttpStatusCode.NoContent:
+                                _message = "Success!";
+                                ModSettings.SaveConfig();
+                                break;
+                            case HttpStatusCode.Unauthorized:
+                                _message = "Login failed";
+                                break;
+                            default:
+                                _message = string.Format("Error ({0}: {1})", (int)response.StatusCode, response.StatusDescription);
+                                break;
+                        }
+                    });
+                }
+                catch (Exception ex)
                 {
                     _working = false;
-                    if (response.ErrorException != null)
-                    {
-                        Debug.LogWarning("[KerbalCraft] connection check failed");
-                        Debug.LogException(response.ErrorException);
-                        _message = "Connection failed";
-                        return;
-                    }
-                    switch (response.StatusCode)
-                    {
-                        case HttpStatusCode.NoContent:
-                            _message = "Success!";
-                            ModSettings.SaveConfig();
-                            break;
-                        case HttpStatusCode.Unauthorized:
-                            _message = "Login failed";
-                            break;
-                        default:
-                            _message = string.Format("Error (HTTP Code {0})", response.StatusCode);
-                            break;
-                    }
-                });
+                    _message = ex.Message;
+                    Debug.LogException(ex);
+                }
             }
             if (GUILayout.Button("Close"))
             {

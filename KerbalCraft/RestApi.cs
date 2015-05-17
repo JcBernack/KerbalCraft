@@ -75,14 +75,9 @@ namespace KerbalCraft
             return client.ExecuteAsync(request, _ => Callbacks.Add(() => callback(_)));
         }
 
-        public static RestRequestAsyncHandle CheckConnection(Action<IRestResponse> callback)
-        {
-            var request = CreateRequest("empty/", Method.HEAD);
-            return Execute(request, callback, true);
-        }
-
         /// <summary>
-        /// Creates a new user on the server. The server will respond with HTTP 204 on success, otherwise 400.
+        /// Creates a new user on the server or validates an existing one.
+        /// The server will respond with HTTP 204 if the user credentials are ok, otherwise 400.
         /// </summary>
         /// <param name="username">Specifies the username of a new user.</param>
         /// <param name="password">Specifies the password of a new user.</param>

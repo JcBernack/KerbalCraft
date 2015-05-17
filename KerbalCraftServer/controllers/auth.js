@@ -6,18 +6,14 @@ passport.use(new BasicStrategy(
     function (username, password, callback) {
         User.findOne({ username: username }, { username: true, password: true }, function (err, user) {
             if (err) return callback(err);
-            
-            // No user found with that username
+            // user not found
             if (!user) return callback(null, false);
-            
-            // Make sure the password is correct
-            user.verifyPassword(password, function (err, isMatch) {
+            // user found, check password
+            user.verifyPassword(password, function (err, matched) {
                 if (err) return callback(err);
-                
-                // Password did not match
-                if (!isMatch) return callback(null, false);
-                
-                // Success
+                // wrong password
+                if (!matched) return callback(null, false);
+                // user credentials ok
                 return callback(null, user);
             });
         });
