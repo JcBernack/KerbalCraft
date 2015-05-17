@@ -4,12 +4,9 @@ Mongoose throws uncaught exception when a validation error occurs, currently jus
 # Todo
 More details about the ships in the list
  - Information from the used parts would be great
-Refactor and cleanup relations between ModGlobals, CraftListMod, MainWindow and SettingsWindow
 
 # Ideas
 Add features to make a public server feasible:
- - Authentication required to upload a ship: simple username/password should be sufficient
- - Authentication required to delete a ship: Limit deletion to the users own ships
  - Add a version check to the api to ensure old clients realize that they are old
 Add sorting and filtering to the table
 Build multiple thumbnails to animate a rotating ship in the preview

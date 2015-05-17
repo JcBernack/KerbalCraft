@@ -13,9 +13,6 @@ namespace KerbalCraft
 
         public static readonly string PluginDataPath;
 
-        public static MainWindow MainWindow { get; private set; }
-        public static SettingsWindow SettingsWindow { get; private set; }
-
         public static Texture2D IconSmall { get; private set; }
         public static Texture2D IconLarge { get; private set; }
         public static Texture2D TransparentTexture { get; private set; }
@@ -23,7 +20,6 @@ namespace KerbalCraft
         public static GUIStyle RowStyle { get; private set; }
         public static GUIStyle MessageStyle { get; private set; }
 
-        private static bool _initialized;
         private static bool _initializedGUI;
 
         static ModGlobals()
@@ -34,18 +30,6 @@ namespace KerbalCraft
             // load icons, small for the application launcher, large as a placeholder for missing or loading thumbnails
             IconSmall = GameDatabase.Instance.GetTexture(ModName + "/Data/IconSmall", false);
             IconLarge = GameDatabase.Instance.GetTexture(ModName + "/Data/IconLarge", false);
-        }
-
-        /// <summary>
-        /// Initialize static data.
-        /// </summary>
-        public static void Initialize()
-        {
-            if (_initialized) return;
-            _initialized = true;
-            // create windows
-            MainWindow = new MainWindow();
-            SettingsWindow = new SettingsWindow();
         }
 
         /// <summary>

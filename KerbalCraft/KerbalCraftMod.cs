@@ -10,17 +10,19 @@ namespace KerbalCraft
     public class KerbalCraftMod
         : MonoBehaviour
     {
-        private const ApplicationLauncher.AppScenes VisibleInScenes = ApplicationLauncher.AppScenes.ALWAYS;
-
-        public ApplicationLauncherButton AppLauncherButton;
+        private ApplicationLauncherButton _appLauncherButton;
+        private MainWindow _mainWindow;
+        private SettingsWindow _settingsWindow;
 
         public void Awake()
         {
-            // initialize globally used objects
-            ModGlobals.Initialize();
+            // create windows
+            _settingsWindow = new SettingsWindow();
+            _mainWindow = new MainWindow();
             // hook up events
-            ModGlobals.MainWindow.Hide += OnHide;
-            ModGlobals.SettingsWindow.Hide += OnHide;
+            _settingsWindow.Hide += OnHide;
+            _mainWindow.Hide += OnHide;
+            _mainWindow.SettingsClicked += _settingsWindow.Open;
             // add a button to the application launcher
             if (ApplicationLauncher.Ready) AddLauncherButton();
             else GameEvents.onGUIApplicationLauncherReady.Add(AddLauncherButton);
@@ -41,15 +43,16 @@ namespace KerbalCraft
             // handle asynchronous responses
             RestApi.HandleResponses();
             // render windows
-            ModGlobals.MainWindow.OnGUI();
-            ModGlobals.SettingsWindow.OnGUI();
+            _mainWindow.OnGUI();
+            _settingsWindow.OnGUI();
         }
 
         private void AddLauncherButton()
         {
             GameEvents.onGUIApplicationLauncherReady.Remove(AddLauncherButton);
             Debug.Log("[KerbalCraft] adding button to ApplicationLauncher");
-            AppLauncherButton = ApplicationLauncher.Instance.AddModApplication(OnTrue, OnFalse, null, null, null, OnDisable, VisibleInScenes, ModGlobals.IconSmall);
+            _appLauncherButton = ApplicationLauncher.Instance.AddModApplication(OnTrue, OnFalse, null, null, null, OnDisable,
+                ApplicationLauncher.AppScenes.ALWAYS, ModGlobals.IconSmall);
         }
 
         /// <summary>
@@ -57,7 +60,7 @@ namespace KerbalCraft
         /// </summary>
         private void OnHide()
         {
-            if (!ModGlobals.MainWindow.Visible && !ModGlobals.SettingsWindow.Visible)
+            if (!_mainWindow.Visible && !_settingsWindow.Visible)
             {
                 OnDisable();
             }
@@ -68,19 +71,19 @@ namespace KerbalCraft
         /// </summary>
         private void OnTrue()
         {
-            ModGlobals.MainWindow.Open();
+            _mainWindow.Open();
         }
 
         private void OnFalse()
         {
-            ModGlobals.MainWindow.Close();
-            ModGlobals.SettingsWindow.Close();
+            _mainWindow.Close();
+            _settingsWindow.Close();
         }
 
         private void OnDisable()
         {
             // make sure the button is in its "false" state
-            if (AppLauncherButton != null) AppLauncherButton.SetFalse();
+            if (_appLauncherButton != null) _appLauncherButton.SetFalse();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Reflection;
@@ -11,6 +12,8 @@ namespace KerbalCraft
     public class MainWindow
         : Window
     {
+        public event Action SettingsClicked;
+
         private const int LeftWidth = 400;
         private const int RightWidth = 250;
 
@@ -85,7 +88,7 @@ namespace KerbalCraft
             }
             if (GUILayout.Button("Settings"))
             {
-                ModGlobals.SettingsWindow.Open();
+                if (SettingsClicked != null) SettingsClicked();
             }
             if (GUILayout.Button("Close"))
             {
