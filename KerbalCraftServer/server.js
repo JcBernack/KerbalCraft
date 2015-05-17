@@ -6,7 +6,10 @@ var express = require("express");
 var bodyParser = require("body-parser");
 var helmet = require("helmet");
 //var compress = require("compression");
+var passport = require("passport");
 var mongoose = require("mongoose");
+var authController = require("./controllers/auth");
+var userController = require("./controllers/user");
 var craftController = require("./controllers/craft");
 var uploadController = require("./controllers/upload");
 
@@ -25,7 +28,7 @@ if (!argv.p && !argv.port) {
 }
 
 // connect to database
-//mongoose.set("debug", true);
+mongoose.set("debug", true);
 mongoose.connect("localhost", argv.d || argv.database || "kerbalcraft");
 
 mongoose.connection.on("error", function (err) {
@@ -38,16 +41,31 @@ mongoose.connection.once("open", function () {
 
 // create express server
 var app = express();
+
+// add middleware to log the last request in raw format
+//TODO: find out how to access the raw headers
+//app.use(function (request, response, next) {
+//    var rawBody = "";
+//    request.on("data", function (chunk) {
+//        rawBody += chunk;
+//    });
+//    request.on("end", function () {
+//        fs.writeFile("request.txt", util.inspect(request.headers) + "\r\n" + rawBody);
+//    });
+//    next();
+//});
+
 app.use(helmet());
 //app.use(compress());  // causes error under Unity's version of Mono: "EntryPointNotFoundException : CreateZStream"
 app.use(bodyParser.json());
+app.use(passport.initialize());
 
 // add middleware to log all api requests to the console
 app.use(function(req, res, next) {
     // log http method and url
     console.log(req.method, req.originalUrl);
     // log request body
-    //console.dir(req.body);
+    console.dir(req.body);
     // monkey patch the response.end function to log all responses
     var originalEnd = res.end;
     res.end = function () {
@@ -61,14 +79,19 @@ app.use(function(req, res, next) {
 // add the rest router
 var router = express.Router();
 router.route("/craft")
-    .post(uploadController.createInMemoryMulter(2, 2097152), craftController.postCraft)
+    .post(authController.isAuthenticated, uploadController.createInMemoryMulter(2, 2097152), craftController.postCraft)
     .get(craftController.getCraft);
 router.route("/craft/:id/thumbnail")
     .get(craftController.getCraftThumbnail);
 router.route("/craft/:id/data")
     .get(craftController.getCraftData);
 router.route("/craft/:id")
-    .delete(craftController.deleteCraft);
+    .delete(authController.isAuthenticated, craftController.deleteCraft);
+router.route("/user")
+    .post(userController.postUser)
+    .get(userController.getUser);
+router.route("/empty")
+    .head(authController.isAuthenticated, function(req, res) { res.status(204).end(); });
 app.use("/api", router);
 
 //TODO: have a look at proper express error handling

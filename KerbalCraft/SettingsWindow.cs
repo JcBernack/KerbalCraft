@@ -1,13 +1,19 @@
-﻿using UnityEngine;
+﻿using System.Net;
+using RestSharp;
+using UnityEngine;
 
 namespace KerbalCraft
 {
     public class SettingsWindow
         : Window
     {
-        private const int Width = 200;
+        private const int Width = 250;
         private string _editHostAddress;
-        private string _editAuthorName;
+        private string _editUsername;
+        private string _editPassword;
+
+        private bool _working;
+        private string _message;
 
         public SettingsWindow()
             : base(0, 0, ModGlobals.ModName + " - Settings")
@@ -17,8 +23,10 @@ namespace KerbalCraft
 
         protected void OnShow()
         {
-            _editHostAddress = ModGlobals.HostAddress;
-            _editAuthorName = ModGlobals.AuthorName;
+            // fetch current values
+            _editHostAddress = ModSettings.HostAddress;
+            _editUsername = ModSettings.Username;
+            _editPassword = ModSettings.Password;
             // move the window to the screen center
             Rect.x = Screen.width/2 - Width/2;
             Rect.y = 80;
@@ -28,23 +36,95 @@ namespace KerbalCraft
         {
             PreventEditorClickthrough();
             GUILayout.BeginVertical(GUILayout.Width(Width));
-            GUILayout.Label("Host address:", ModGlobals.HeadStyle);
-            _editHostAddress = GUILayout.TextField(_editHostAddress);
-            GUILayout.Label("Author name:", ModGlobals.HeadStyle);
-            _editAuthorName = GUILayout.TextField(_editAuthorName, 30);
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Apply"))
+            if (_working)
             {
-                ModGlobals.SaveConfig(_editHostAddress, _editAuthorName);
-                Close();
+                GUILayout.Label("Working...");
             }
-            if (GUILayout.Button("Cancel"))
+            else
+            {
+                DrawInputs();
+                if (!string.IsNullOrEmpty(_message))
+                {
+                    GUILayout.Label(_message, ModGlobals.MessageStyle);
+                }
+            }
+            GUILayout.EndVertical();
+            GUI.DragWindow();
+        }
+
+        private void DrawInputs()
+        {
+            GUILayout.Label("Host address:", ModGlobals.HeadStyle);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label("https://");
+            _editHostAddress = GUILayout.TextField(_editHostAddress);
+            GUILayout.Label("/api/");
+            GUILayout.EndHorizontal();
+            GUILayout.Label("Username:", ModGlobals.HeadStyle);
+            _editUsername = GUILayout.TextField(_editUsername, 30);
+            GUILayout.Label("Password:", ModGlobals.HeadStyle);
+            _editPassword = GUILayout.PasswordField(_editPassword, '#', 50);
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Register"))
+            {
+                _working = true;
+                ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
+                RestApi.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
+                {
+                    _working = false;
+                    if (response.ErrorException != null)
+                    {
+                        Debug.LogWarning("[KerbalCraft] register user failed");
+                        Debug.LogException(response.ErrorException);
+                        _message = "Connection failed";
+                        return;
+                    }
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.NoContent:
+                            _message = "Success!";
+                            ModSettings.SaveConfig();
+                            break;
+                        default:
+                            _message = string.Format("Error (HTTP Code {0})", response.StatusCode);
+                            break;
+                    }
+                });
+            }
+            if (GUILayout.Button("Login"))
+            {
+                _working = true;
+                ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
+                RestApi.CheckConnection(delegate(IRestResponse response)
+                {
+                    _working = false;
+                    if (response.ErrorException != null)
+                    {
+                        Debug.LogWarning("[KerbalCraft] connection check failed");
+                        Debug.LogException(response.ErrorException);
+                        _message = "Connection failed";
+                        return;
+                    }
+                    switch (response.StatusCode)
+                    {
+                        case HttpStatusCode.NoContent:
+                            _message = "Success!";
+                            ModSettings.SaveConfig();
+                            break;
+                        case HttpStatusCode.Unauthorized:
+                            _message = "Login failed";
+                            break;
+                        default:
+                            _message = string.Format("Error (HTTP Code {0})", response.StatusCode);
+                            break;
+                    }
+                });
+            }
+            if (GUILayout.Button("Close"))
             {
                 Close();
             }
             GUILayout.EndHorizontal();
-            GUILayout.EndVertical();
-            GUI.DragWindow();
         }
     }
 }

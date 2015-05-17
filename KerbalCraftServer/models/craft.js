@@ -3,7 +3,7 @@ var parser = require("../config-node-parser");
 
 var CraftSchema = mongoose.Schema({
     date: { type: Date, default: Date.now },
-    author: { type: String, required: true },
+    author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     craft: { type: String, required: true },
     thumbnail: { type: Buffer, required: true },
     info: { type: mongoose.Schema.Types.Mixed }

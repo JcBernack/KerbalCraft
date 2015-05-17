@@ -68,14 +68,7 @@ namespace KerbalCraft
         /// </summary>
         private void OnTrue()
         {
-            if (ModGlobals.SettingsLoaded)
-            {
-                ModGlobals.MainWindow.Open();
-            }
-            else
-            {
-                ModGlobals.SettingsWindow.Open();
-            }
+            ModGlobals.MainWindow.Open();
         }
 
         private void OnFalse()

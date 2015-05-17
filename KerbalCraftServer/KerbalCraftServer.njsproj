@@ -34,10 +34,13 @@
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="controllers\auth.js" />
+    <Compile Include="controllers\user.js" />
     <Compile Include="controllers\craft.js" />
     <Compile Include="config-node-parser.js" />
     <Compile Include="controllers\upload.js" />
     <Compile Include="models\craft.js" />
+    <Compile Include="models\user.js" />
     <Compile Include="server.js" />
     <Compile Include="update.js" />
     <Content Include="package.json" />

@@ -29,8 +29,9 @@ module.exports.postCraft = function (req, res) {
     }
     // create craft document
     var craft = new Craft({
-        author: req.body.author,
+        author: req.user._id,
         craft: lzf.decompress(craftData.buffer).toString("utf8"),
+        //craft: craftData.buffer.toString("utf8"),
         thumbnail: thumbnail.buffer
     });
     // invoke parser to add craft information
@@ -39,10 +40,19 @@ module.exports.postCraft = function (req, res) {
     craft.save(function (err) {
         if (err) return handleError(err, res);
         // return the new item back to client with updated fields like _id and date but without the binary data fields
-        var ret = craft.toObject();
-        delete ret.craft;
-        delete ret.thumbnail;
-        res.send(ret);
+        //var ret = craft.toObject();
+        //delete ret.__v;
+        //delete ret.author;
+        //delete ret.craft;
+        //delete ret.thumbnail;
+        //res.send(ret);
+        Craft.findById(craft._id, { date: true, author: true, info: true })
+            .populate("author", { _id: true, username: true })
+            .exec(function (err, craft) {
+                if (err) return handleError(err, res);
+                res.send(craft);
+            }
+         );
     });
 };
 
@@ -50,9 +60,9 @@ module.exports.postCraft = function (req, res) {
 module.exports.getCraft = function(req, res) {
     var skip = queryInt(req, "skip", 0, 0);
     var limit = queryInt(req, "limit", 20, 1, 50);
-    Craft.find(null, { date: true, author: true, info: true },
-        { sort: { date: -1 }, skip: skip, limit: limit },
-        function(err, crafts) {
+    Craft.find(null, { date: true, author: true, info: true }, { sort: { date: -1 }, skip: skip, limit: limit })
+        .populate("author", { _id: true, username: true })
+        .exec(function(err, crafts) {
             if (err) return handleError(err, res);
             res.send(crafts);
         }

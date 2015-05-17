@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Reflection;
+using KerbalCraft.Models;
 using RestSharp;
 using UnityEngine;
 
@@ -12,8 +14,8 @@ namespace KerbalCraft
         private const int LeftWidth = 400;
         private const int RightWidth = 250;
 
-        private List<CraftData> _craftList;
-        private CraftData _selectedCraft;
+        private List<Craft> _craftList;
+        private Craft _selectedCraft;
 
         private readonly Texture2D _thumbnail;
         private string _tableMessage;
@@ -28,7 +30,7 @@ namespace KerbalCraft
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
             ResetState();
             Show += OnShow;
-            ModGlobals.SettingsChange += OnSettingsChanged;
+            ModSettings.ConfigChanged += OnSettingsChanged;
         }
 
         private void ResetState()
@@ -96,27 +98,26 @@ namespace KerbalCraft
         private void UpdateCraftList()
         {
             _tableMessage = "loading..";
-            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse<List<CraftData>> response)
+            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse response)
             {
-                if (response.ErrorException != null)
+                if (HandleResponseError(response, "get craft list"))
                 {
-                    Debug.LogError("[KerbalCraft] failed to load craft list.");
-                    Debug.LogException(response.ErrorException);
                     _craftList = null;
                     _pageLength = 0;
                     _tableMessage = "Failed to load list, maybe check the settings.";
                     return;
                 }
-                if (response.Data == null || response.Data.Count == 0)
+                var data = RestApi.Deserialize<List<Craft>>(response);
+                if (data == null || data.Count == 0)
                 {
                     _pageLength = 0;
                     _tableMessage = "There is nothing here.";
                 }
                 else
                 {
-                    _pageLength = response.Data.Count;
+                    _pageLength = data.Count;
                 }
-                _craftList = response.Data;
+                _craftList = data;
                 Debug.Log(string.Format("[KerbalCraft] Received {0} entries.", _pageLength));
                 ResetWindowSize();
             });
@@ -143,7 +144,7 @@ namespace KerbalCraft
                 // add table data
                 foreach (var craft in _craftList)
                 {
-                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author });
+                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author.username });
                 }
             }
             // draw table
@@ -159,7 +160,7 @@ namespace KerbalCraft
             GUILayout.Label(string.Format("Showing #{0} to #{1}", _pageSkip+1, _pageSkip + _pageLimit));
         }
 
-        private void SelectCraft(CraftData craft)
+        private void SelectCraft(Craft craft)
         {
             // change the selected craft
             _selectedCraft = craft;
@@ -169,20 +170,15 @@ namespace KerbalCraft
                 UpdateThumbnail(craft);
                 return;
             }
-            RestApi.GetThumbnail(craft._id, delegate(IRestResponse response)
+            RestApi.GetCraftThumbnail(craft._id, delegate(IRestResponse response)
             {
-                if (response.ErrorException != null)
-                {
-                    Debug.LogWarning("[KerbalCraft] unable to load thumbnail for: " + craft._id);
-                    Debug.LogException(response.ErrorException);
-                    return;
-                }
+                if (HandleResponseError(response, "get craft thumbnail")) return;
                 craft.ThumbnailCache = response.RawBytes;
                 UpdateThumbnail(craft);
             });
         }
 
-        private void UpdateThumbnail(CraftData craft)
+        private void UpdateThumbnail(Craft craft)
         {
             // prevent race condition
             if (_selectedCraft != craft) return;
@@ -208,26 +204,24 @@ namespace KerbalCraft
             // draw thumbnail or icon
             GUILayout.Box(_selectedCraft.ThumbnailCache == null ? ModGlobals.IconLarge : _thumbnail);
             // draw details table
+            //TODO: maybe somehow automatically add all properties of the info object
             var cells = new[]
             {
                 "Name:", "Type:", "Author:", "Date:", "Size:", "Part count:", "KSP version:", "Description:",
-                _selectedCraft.info.ship, _selectedCraft.info.type, _selectedCraft.author, _selectedCraft.date.ToLongDateString(),
+                _selectedCraft.info.ship, _selectedCraft.info.type, _selectedCraft.author.username, _selectedCraft.date.ToLongDateString(),
                 _selectedCraft.info.size, _selectedCraft.info.partCount, _selectedCraft.info.version, _selectedCraft.info.description
             };
             GUIHelper.Grid(8, true, cells);
             GUILayout.BeginHorizontal();
-            // draw delete button
-            if (GUILayout.Button("Delete"))
+            // draw delete button if the user owns the craft
+            // just comparing the username is not enough of course, but the server will make sure
+            // the user actually owns it, otherwise the delete will fail
+            if (_selectedCraft.author.username == ModSettings.Username && GUILayout.Button("Delete"))
             {
                 Debug.Log("[KerbalCraft] deleting craft craft: " + _selectedCraft._id);
                 RestApi.DeleteCraft(_selectedCraft._id, delegate(IRestResponse response)
                 {
-                    if (response.ErrorException != null)
-                    {
-                        Debug.LogWarning("[KerbalCraft] deletion failed");
-                        Debug.LogException(response.ErrorException);
-                        return;
-                    }
+                    if (HandleResponseError(response, "delete craft")) return;
                     Debug.Log("[KerbalCraft] delete successful");
                     // update list after deletion
                     UpdateCraftList();
@@ -251,7 +245,7 @@ namespace KerbalCraft
             GUILayout.EndHorizontal();
         }
 
-        private void RequestCraftData(CraftData craft, bool merge)
+        private void RequestCraftData(Craft craft, bool merge)
         {
             if (craft.CraftCache != null)
             {
@@ -260,14 +254,9 @@ namespace KerbalCraft
             else
             {
                 Debug.Log("[KerbalCraft] loading craft: " + craft._id);
-                RestApi.GetCraft(craft._id, delegate(IRestResponse response)
+                RestApi.GetCraftData(craft._id, delegate(IRestResponse response)
                 {
-                    if (response.ErrorException != null)
-                    {
-                        Debug.LogError("[KerbalCraft] craft download failed");
-                        Debug.LogException(response.ErrorException);
-                        return;
-                    }
+                    if (HandleResponseError(response, "get craft data")) return;
                     craft.CraftCache = CLZF2.Decompress(response.RawBytes);
                     Debug.Log("[KerbalCraft] craft bytes loaded: " + craft.CraftCache.Length);
                     LoadCraft(craft, merge);
@@ -275,7 +264,7 @@ namespace KerbalCraft
             }
         }
 
-        private void LoadCraft(CraftData craft, bool merge)
+        private void LoadCraft(Craft craft, bool merge)
         {
             //TODO: find a way to load the ConfigNode directly from a string and skip writing it to a file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "download.craft");
@@ -297,7 +286,6 @@ namespace KerbalCraft
             var ship = EditorLogic.fetch.ship;
             if (ship.Count == 0) return;
             if (ship.shipName.Length == 0) return;
-            if (ModGlobals.AuthorName.Length == 0) return;
             // save current craft to file
             var craftPath = Path.Combine(ModGlobals.PluginDataPath, "upload.craft");
             ship.SaveShip().Save(craftPath);
@@ -305,28 +293,39 @@ namespace KerbalCraft
             ThumbnailHelper.CaptureThumbnail(ship, ModGlobals.ThumbnailResolution, ModGlobals.PluginDataPath, "thumbnail");
             // prepare binary data of the craft and thumbnail
             var craftData = CLZF2.Compress(File.ReadAllBytes(craftPath));
+            //var craftData = File.ReadAllBytes(craftPath);
             var thumbnail = File.ReadAllBytes(Path.Combine(ModGlobals.PluginDataPath, "thumbnail.png"));
             //TODO: find a way to get thumbnail and craft data without file access
-            // create transfer object
-            var craft = new CraftData
-            {
-                author = ModGlobals.AuthorName
-            };
             // upload the craft
             Debug.Log("[KerbalCraft] uploading craft");
-            RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<CraftData> response)
+            RestApi.PostCraft(craftData, thumbnail, delegate(IRestResponse response)
             {
-                if (response.ErrorException != null)
-                {
-                    Debug.LogError("[KerbalCraft] sharing craft failed");
-                    Debug.LogException(response.ErrorException);
-                    return;
-                }
-                craft = response.Data;
+                if (HandleResponseError(response, "post craft")) return;
+                var craft = RestApi.Deserialize<Craft>(response);
                 Debug.Log("[KerbalCraft] new shared craft ID: " + craft._id);
+                SelectCraft(craft);
                 // refresh list to reflect the new entry
                 UpdateCraftList();
             });
+        }
+
+        private static bool HandleResponseError(IRestResponse response, string action)
+        {
+            if (response.ErrorException != null)
+            {
+                Debug.LogError(string.Format("[KerbalCraft] {0} (transport error)", action));
+                Debug.LogException(response.ErrorException);
+                return true;
+            }
+            switch (response.StatusCode)
+            {
+                default:
+                    Debug.LogError(string.Format("[KerbalCraft] {0} (HTTP code {1})", action, response.StatusCode));
+                    return true;
+                case HttpStatusCode.NoContent:
+                case HttpStatusCode.OK:
+                    return false;
+            }
         }
     }
 }

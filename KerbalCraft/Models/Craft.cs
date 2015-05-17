@@ -1,12 +1,12 @@
 using System;
 
-namespace KerbalCraft
+namespace KerbalCraft.Models
 {
-    public class CraftData
+    public class Craft
     {
         public string _id { get; set; }
         public DateTime date { get; set; }
-        public string author { get; set; }
+        public CraftUser author { get; set; }
         public CraftInfo info { get; set; }
 
         public byte[] CraftCache;

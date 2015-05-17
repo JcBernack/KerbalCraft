@@ -1,4 +1,4 @@
-namespace KerbalCraft
+namespace KerbalCraft.Models
 {
     public class CraftInfo
     {

@@ -5,6 +5,7 @@ using System.IO;
 using System.Text;
 using System.Windows.Forms;
 using KerbalCraft;
+using KerbalCraft.Models;
 using RestSharp;
 
 namespace KerbalCraftTest
@@ -15,15 +16,15 @@ namespace KerbalCraftTest
         public KerbalCraftForm()
         {
             InitializeComponent();
-            RestApi.SetHostAddress("localhost:10412");
+            RestApi.SetConfig("localhost:10412", "huso", "lolol");
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
-            var handle = RestApi.GetCraft(0, 5, delegate(IRestResponse<List<CraftData>> response)
+            var handle = RestApi.GetCraft(0, 5, delegate(IRestResponse response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;
-                var crafts = response.Data;
+                var crafts = RestApi.Deserialize<List<Craft>>(response);
                 Debugger.Break();
                 if (crafts != null && crafts.Count > 0) textBox1.Text = crafts[0]._id;
             });
@@ -31,23 +32,19 @@ namespace KerbalCraftTest
 
         private void button2_Click(object sender, EventArgs e)
         {
-            var craft = new CraftData
-            {
-                author = "Client app"
-            };
             var craftData = CLZF2.Compress(File.ReadAllBytes("Munlander.craft"));
             var thumbnail = File.ReadAllBytes("Munlander.png");
-            var handle = RestApi.PostCraft(craft, craftData, thumbnail, delegate(IRestResponse<CraftData> response)
+            var handle = RestApi.PostCraft(craftData, thumbnail, delegate(IRestResponse response)
             {
                 if (response.ErrorException != null) throw response.ErrorException;
-                craft = response.Data;
+                var craft = RestApi.Deserialize<Craft>(response);
                 Debugger.Break();
             });
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            var handle = RestApi.GetCraft(textBox1.Text, delegate(IRestResponse response)
+            var handle = RestApi.GetCraftData(textBox1.Text, delegate(IRestResponse response)
             {
                 var craft = Encoding.UTF8.GetString(CLZF2.Decompress(response.RawBytes));
                 Debugger.Break();
@@ -56,7 +53,7 @@ namespace KerbalCraftTest
 
         private void button4_Click(object sender, EventArgs e)
         {
-            var handle = RestApi.GetThumbnail(textBox1.Text, delegate(IRestResponse response)
+            var handle = RestApi.GetCraftThumbnail(textBox1.Text, delegate(IRestResponse response)
             {
                 File.WriteAllBytes("download.png", response.RawBytes);
                 Debugger.Break();

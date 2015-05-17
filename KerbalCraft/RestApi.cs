@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
+using KerbalCraft.Models;
 using RestSharp;
+using RestSharp.Deserializers;
 
 namespace KerbalCraft
 {
@@ -10,35 +12,29 @@ namespace KerbalCraft
     /// </summary>
     public static class RestApi
     {
-        /// <summary>
-        /// Holds all pending callbacks.
-        /// </summary>
+        public static string HostAddress { get; private set; }
+        public static string Username { get; private set; }
+        public static string Password { get; private set; }
+
+        private static readonly IDeserializer Deserializer = new JsonDeserializer { DateFormat = "yyyy-MM-ddTHH:mm:ss.fffZ" };
         private static readonly List<Action> Callbacks = new List<Action>();
-
-        private static RestClient _client;
-
+        
         static RestApi()
         {
             //TODO: get a proper certificate and stop preventing the validity check
             ServicePointManager.ServerCertificateValidationCallback = delegate { return true; };
         }
 
-        /// <summary>
-        /// Applies a new host address to use for all upcoming request.
-        /// </summary>
-        public static void SetHostAddress(string host)
+        public static T Deserialize<T>(IRestResponse response)
         {
-            _client = new RestClient(string.Format("https://{0}/api/", host));
+            return Deserializer.Deserialize<T>(response);
         }
 
-        private static RestRequest CreateRequest(string resource, Method method)
+        public static void SetConfig(string hostAddress, string username, string password)
         {
-            return new RestRequest(resource, method)
-            {
-                Timeout = 5000,
-                RequestFormat = DataFormat.Json,
-                DateFormat = "yyyy-MM-ddTHH:mm:ss.fffZ"
-            };
+            HostAddress = hostAddress;
+            Username = username;
+            Password = password;
         }
 
         /// <summary>
@@ -63,15 +59,55 @@ namespace KerbalCraft
             }
         }
 
-        private static RestRequestAsyncHandle Execute<T>(IRestRequest request, Action<IRestResponse<T>> callback)
-            where T : new()
+        private static RestRequest CreateRequest(string resource, Method method)
         {
-            return _client.ExecuteAsync<T>(request, _ => Callbacks.Add(() => callback(_)));
+            return new RestRequest(resource, method)
+            {
+                Timeout = 5000,
+                RequestFormat = DataFormat.Json
+            };
         }
 
-        private static RestRequestAsyncHandle Execute(IRestRequest request, Action<IRestResponse> callback)
+        private static RestRequestAsyncHandle Execute(IRestRequest request, Action<IRestResponse> callback, bool authentication = false)
         {
-            return _client.ExecuteAsync(request, _ => Callbacks.Add(() => callback(_)));
+            var client = new RestClient(string.Format("https://{0}/api/", HostAddress));
+            if (authentication) client.Authenticator = new HttpBasicAuthenticator(Username, Password);
+            return client.ExecuteAsync(request, _ => Callbacks.Add(() => callback(_)));
+        }
+
+        public static RestRequestAsyncHandle CheckConnection(Action<IRestResponse> callback)
+        {
+            var request = CreateRequest("empty/", Method.HEAD);
+            return Execute(request, callback, true);
+        }
+
+        /// <summary>
+        /// Creates a new user on the server. The server will respond with HTTP 204 on success, otherwise 400.
+        /// </summary>
+        /// <param name="username">Specifies the username of a new user.</param>
+        /// <param name="password">Specifies the password of a new user.</param>
+        /// <param name="callback">A callback receiving the response from the server.</param>
+        /// <returns>A handle to the asynchronous request.</returns>
+        public static RestRequestAsyncHandle PostUser(string username, string password, Action<IRestResponse> callback)
+        {
+            var request = CreateRequest("user/", Method.POST);
+            request.AddBody(new CraftUser { username = username, password = password });
+            return Execute(request, callback);
+        }
+
+        /// <summary>
+        /// Creates a new shared craft with the given data.
+        /// </summary>
+        /// <param name="craftData">Raw bytes of the (compressed) craft file.</param>
+        /// <param name="thumbnail">Raw bytes of the thumbnail.</param>
+        /// <param name="callback">A callback receiving the response from the server, containing the newly created craft with updated information returned from the server.</param>
+        /// <returns>A handle to the asynchronous request.</returns>
+        public static RestRequestAsyncHandle PostCraft(byte[] craftData, byte[] thumbnail, Action<IRestResponse> callback)
+        {
+            var request = CreateRequest("craft/", Method.POST);
+            request.AddFile("craftData", craftData, "craftData.craft");
+            request.AddFile("thumbnail", thumbnail, "thumbnail.png");
+            return Execute(request, callback, true);
         }
 
         /// <summary>
@@ -81,7 +117,7 @@ namespace KerbalCraft
         /// <param name="limit">Specifies the number of elements to request from the server. The server does not necessarily respond with the given number of items.</param>
         /// <param name="callback">A callback receiving the response from the server, containing the elements of the craft list.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle GetCraft(int skip, int limit, Action<IRestResponse<List<CraftData>>> callback)
+        public static RestRequestAsyncHandle GetCraft(int skip, int limit, Action<IRestResponse> callback)
         {
             var request = CreateRequest("craft/", Method.GET);
             request.AddQueryParameter("skip", skip.ToString());
@@ -95,7 +131,7 @@ namespace KerbalCraft
         /// <param name="id">Specifies the id of a shared craft.</param>
         /// <param name="callback">A callback receiving the response from the server, containing the (compressed) raw bytes of the craft.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle GetCraft(string id, Action<IRestResponse> callback)
+        public static RestRequestAsyncHandle GetCraftData(string id, Action<IRestResponse> callback)
         {
             var request = CreateRequest("craft/{id}/data", Method.GET);
             request.AddUrlSegment("id", id);
@@ -108,7 +144,7 @@ namespace KerbalCraft
         /// <param name="id">Specifies the id of a shared craft.</param>
         /// <param name="callback">A callback receiving the response from the server, containing the raw bytes of the thumbnail.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle GetThumbnail(string id, Action<IRestResponse> callback)
+        public static RestRequestAsyncHandle GetCraftThumbnail(string id, Action<IRestResponse> callback)
         {
             var request = CreateRequest("craft/{id}/thumbnail", Method.GET);
             request.AddUrlSegment("id", id);
@@ -124,24 +160,7 @@ namespace KerbalCraft
         public static RestRequestAsyncHandle DeleteCraft(string id, Action<IRestResponse> callback)
         {
             var request = CreateRequest("craft/" + id, Method.DELETE);
-            return Execute(request, callback);
-        }
-
-        /// <summary>
-        /// Creates a new shared craft with the given data.
-        /// </summary>
-        /// <param name="craft">Information about the craft to be shared.</param>
-        /// <param name="craftData">Raw bytes of the (compressed) craft file.</param>
-        /// <param name="thumbnail">Raw bytes of the thumbnail.</param>
-        /// <param name="callback">A callback receiving the response from the server, containing the newly created craft with updated information returned from the server.</param>
-        /// <returns>A handle to the asynchronous request.</returns>
-        public static RestRequestAsyncHandle PostCraft(CraftData craft, byte[] craftData, byte[] thumbnail, Action<IRestResponse<CraftData>> callback)
-        {
-            var request = CreateRequest("craft/", Method.POST);
-            request.AddObject(craft);
-            request.AddFile("craftData", craftData, "craftData.craft");
-            request.AddFile("thumbnail", thumbnail, "thumbnail.png");
-            return Execute(request, callback);
+            return Execute(request, callback, true);
         }
     }
 }
