@@ -20,6 +20,7 @@ namespace KerbalCraft
         private List<Craft> _craftList;
         private Craft _selectedCraft;
 
+        private readonly RestApi _api;
         private readonly Texture2D _thumbnail;
         private string _tableMessage;
 
@@ -30,8 +31,11 @@ namespace KerbalCraft
         public MainWindow()
             : base(Screen.width / 2f - (LeftWidth + RightWidth) / 2f, 250, "KerbalCraft v" + Assembly.GetExecutingAssembly().GetName().Version.ToString(2))
         {
+            _api = new RestApi();
             _thumbnail = new Texture2D(ModGlobals.ThumbnailResolution, ModGlobals.ThumbnailResolution, TextureFormat.ARGB32, false);
-            ResetState();
+            // reset state and update configuration
+            OnConfigSaved();
+            // hook up events
             Show += OnShow;
             ModSettings.ConfigSaved += OnConfigSaved;
         }
@@ -55,17 +59,24 @@ namespace KerbalCraft
         {
             // remove any previous content and state
             ResetState();
+            // update configuration
+            _api.SetConfig(ModSettings.HostAddress, ModSettings.Username, ModSettings.Password);
             // update the list when the settings are changed and the window is already open
             if (Visible) UpdateCraftList();
         }
 
         protected override void DrawMenu(int id)
         {
+            // handle asynchronous responses
+            _api.HandleResponses();
+            // prevent clicking through the window into the editor
             PreventEditorClickthrough();
+            // draw window content
             GUILayout.BeginHorizontal();
             DrawLeftSide();
             DrawRightSide();
             GUILayout.EndHorizontal();
+            // draw buttons
             GUILayout.BeginHorizontal();
             if (GUILayout.Button("Previous page"))
             {
@@ -95,13 +106,14 @@ namespace KerbalCraft
                 Close();
             }
             GUILayout.EndHorizontal();
+            // make the window draggable
             GUI.DragWindow();
         }
 
         private void UpdateCraftList()
         {
             _tableMessage = "loading..";
-            RestApi.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse response)
+            _api.GetCraft(_pageSkip, _pageLimit, delegate(IRestResponse response)
             {
                 if (HandleResponseError(response, "get craft list"))
                 {
@@ -110,7 +122,7 @@ namespace KerbalCraft
                     _tableMessage = "Failed to load list, maybe check the settings.";
                     return;
                 }
-                var data = RestApi.Deserialize<List<Craft>>(response);
+                var data = _api.Deserialize<List<Craft>>(response);
                 if (data == null || data.Count == 0)
                 {
                     _pageLength = 0;
@@ -173,7 +185,7 @@ namespace KerbalCraft
                 UpdateThumbnail(craft);
                 return;
             }
-            RestApi.GetCraftThumbnail(craft._id, delegate(IRestResponse response)
+            _api.GetCraftThumbnail(craft._id, delegate(IRestResponse response)
             {
                 if (HandleResponseError(response, "get craft thumbnail")) return;
                 craft.ThumbnailCache = response.RawBytes;
@@ -222,7 +234,7 @@ namespace KerbalCraft
             if (_selectedCraft.author.username == ModSettings.Username && GUILayout.Button("Delete"))
             {
                 Debug.Log("[KerbalCraft] deleting craft craft: " + _selectedCraft._id);
-                RestApi.DeleteCraft(_selectedCraft._id, delegate(IRestResponse response)
+                _api.DeleteCraft(_selectedCraft._id, delegate(IRestResponse response)
                 {
                     if (HandleResponseError(response, "delete craft")) return;
                     Debug.Log("[KerbalCraft] delete successful");
@@ -257,7 +269,7 @@ namespace KerbalCraft
             else
             {
                 Debug.Log("[KerbalCraft] loading craft: " + craft._id);
-                RestApi.GetCraftData(craft._id, delegate(IRestResponse response)
+                _api.GetCraftData(craft._id, delegate(IRestResponse response)
                 {
                     if (HandleResponseError(response, "get craft data")) return;
                     craft.CraftCache = CLZF2.Decompress(response.RawBytes);
@@ -301,10 +313,10 @@ namespace KerbalCraft
             //TODO: find a way to get thumbnail and craft data without file access
             // upload the craft
             Debug.Log("[KerbalCraft] uploading craft");
-            RestApi.PostCraft(craftData, thumbnail, delegate(IRestResponse response)
+            _api.PostCraft(craftData, thumbnail, delegate(IRestResponse response)
             {
                 if (HandleResponseError(response, "post craft")) return;
-                var craft = RestApi.Deserialize<Craft>(response);
+                var craft = _api.Deserialize<Craft>(response);
                 Debug.Log("[KerbalCraft] new shared craft ID: " + craft._id);
                 SelectCraft(craft);
                 // refresh list to reflect the new entry

@@ -9,25 +9,36 @@ namespace KerbalCraft
         : Window
     {
         private const int Width = 250;
+
+        private readonly RestApi _api;
+
         private string _editHostAddress;
         private string _editUsername;
         private string _editPassword;
 
         private bool _working;
-        private string _message;
+        private string _status;
 
         public SettingsWindow()
             : base(0, 0, ModGlobals.ModName + " - Settings")
         {
+            _api = new RestApi();
             Show += OnShow;
         }
 
-        protected void OnShow()
+        private void Reset()
         {
             // fetch current values
             _editHostAddress = ModSettings.HostAddress;
             _editUsername = ModSettings.Username;
             _editPassword = ModSettings.Password;
+            // reset message
+            _status = null;
+        }
+
+        protected void OnShow()
+        {
+            Reset();
             // move the window to the screen center
             Rect.x = Screen.width/2 - Width/2;
             Rect.y = 80;
@@ -37,7 +48,11 @@ namespace KerbalCraft
 
         protected override void DrawMenu(int id)
         {
+            // handle asynchronous responses
+            _api.HandleResponses();
+            // prevent clicking through the window into the editor
             PreventEditorClickthrough();
+            // draw window content
             GUILayout.BeginVertical(GUILayout.Width(Width));
             if (_working)
             {
@@ -46,9 +61,9 @@ namespace KerbalCraft
             else
             {
                 DrawInputs();
-                if (!string.IsNullOrEmpty(_message))
+                if (!string.IsNullOrEmpty(_status))
                 {
-                    GUILayout.Label(_message, ModGlobals.MessageStyle);
+                    GUILayout.Label(string.Format("Status: {0}", _status), ModGlobals.MessageStyle);
                 }
             }
             GUILayout.EndVertical();
@@ -72,30 +87,31 @@ namespace KerbalCraft
             if (GUILayout.Button("Login"))
             {
                 _working = true;
-                ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
+                _api.SetConfig(_editHostAddress, _editUsername, _editPassword);
                 try
                 {
-                    RestApi.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
+                    _api.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
                     {
                         _working = false;
                         if (response.ErrorException != null)
                         {
                             Debug.LogWarning("[KerbalCraft] login (transport error)");
                             Debug.LogException(response.ErrorException);
-                            _message = "Connection failed";
+                            _status = "Connection failed";
                             return;
                         }
                         switch (response.StatusCode)
                         {
                             case HttpStatusCode.NoContent:
-                                _message = "Success!";
+                                _status = "Success, settings saved";
+                                ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
                                 ModSettings.SaveConfig();
                                 break;
                             case HttpStatusCode.Unauthorized:
-                                _message = "Login failed";
+                                _status = "Login failed";
                                 break;
                             default:
-                                _message = string.Format("Error ({0}: {1})", (int)response.StatusCode, response.StatusDescription);
+                                _status = string.Format("Error ({0} {1})", (int)response.StatusCode, response.StatusDescription);
                                 break;
                         }
                     });
@@ -103,9 +119,13 @@ namespace KerbalCraft
                 catch (Exception ex)
                 {
                     _working = false;
-                    _message = ex.Message;
+                    _status = string.Format("Error ({0})", ex.Message);
                     Debug.LogException(ex);
                 }
+            }
+            if (GUILayout.Button("Reset"))
+            {
+                Reset();
             }
             if (GUILayout.Button("Close"))
             {

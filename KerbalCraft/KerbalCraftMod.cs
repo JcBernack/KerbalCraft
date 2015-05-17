@@ -40,8 +40,6 @@ namespace KerbalCraft
         {
             // make sure global ui elements are initialized
             ModGlobals.InitializeGUI();
-            // handle asynchronous responses
-            RestApi.HandleResponses();
             // render windows
             _mainWindow.OnGUI();
             _settingsWindow.OnGUI();

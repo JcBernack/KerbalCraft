@@ -28,7 +28,6 @@ namespace KerbalCraft
             HostAddress = hostAddress ?? "localhost:10412";
             Username = username ?? "";
             Password = password ?? "";
-            RestApi.SetConfig(HostAddress, Username, Password);
         }
 
         /// <summary>
@@ -62,6 +61,7 @@ namespace KerbalCraft
                 var config = new ConfigNode();
                 config.AddValue("HostAddress", HostAddress);
                 config.AddValue("Username", Username);
+                //TODO: add some security by obscurity to the saved password
                 config.AddValue("Password", Password);
                 config.Save(ConfigPath);
                 Debug.Log("[KerbalCraft] configuration saved");
