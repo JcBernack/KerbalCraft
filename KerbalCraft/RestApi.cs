@@ -81,14 +81,15 @@ namespace KerbalCraft
         /// Creates a new user on the server or validates an existing one.
         /// The server will respond with HTTP 204 if the user credentials are ok, otherwise 400.
         /// </summary>
-        /// <param name="username">Specifies the username of a new user.</param>
-        /// <param name="password">Specifies the password of a new user.</param>
+        /// <param name="username">Specifies the username.</param>
+        /// <param name="password">Specifies the password.</param>
+        /// <param name="newPassword">Specifies a new password.</param>
         /// <param name="callback">A callback receiving the response from the server.</param>
         /// <returns>A handle to the asynchronous request.</returns>
-        public RestRequestAsyncHandle PostUser(string username, string password, Action<IRestResponse> callback)
+        public RestRequestAsyncHandle PostUser(string username, string password, string newPassword, Action<IRestResponse> callback)
         {
             var request = CreateRequest("user/", Method.POST);
-            request.AddBody(new CraftUser { username = username, password = password });
+            request.AddBody(new CraftUser { username = username, password = password, newPassword = newPassword });
             return Execute(request, callback);
         }
 

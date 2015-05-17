@@ -50,6 +50,7 @@
     <Compile Include="Models\CraftUser.cs" />
     <Compile Include="Models\CraftInfo.cs" />
     <Compile Include="GUIHelper.cs" />
+    <Compile Include="Models\CraftMessage.cs" />
     <Compile Include="ModGlobals.cs" />
     <Compile Include="KerbalCraftMod.cs" />
     <Compile Include="MainWindow.cs" />

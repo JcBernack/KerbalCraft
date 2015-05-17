@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using KerbalCraft.Models;
 using RestSharp;
 using UnityEngine;
 
@@ -15,6 +16,7 @@ namespace KerbalCraft
         private string _editHostAddress;
         private string _editUsername;
         private string _editPassword;
+        private string _editNewPassword;
 
         private bool _working;
         private string _status;
@@ -32,8 +34,11 @@ namespace KerbalCraft
             _editHostAddress = ModSettings.HostAddress;
             _editUsername = ModSettings.Username;
             _editPassword = ModSettings.Password;
+            _editNewPassword = "";
             // reset message
             _status = null;
+            // reset window size
+            ResetWindowSize();
         }
 
         protected void OnShow()
@@ -78,19 +83,21 @@ namespace KerbalCraft
             _editHostAddress = GUILayout.TextField(_editHostAddress);
             GUILayout.Label("/api/");
             GUILayout.EndHorizontal();
-            GUILayout.Label("Username:", ModGlobals.HeadStyle);
+            GUILayout.Label("Username", ModGlobals.HeadStyle);
             _editUsername = GUILayout.TextField(_editUsername, 30);
-            GUILayout.Label("Password:", ModGlobals.HeadStyle);
+            GUILayout.Label("Password", ModGlobals.HeadStyle);
             _editPassword = GUILayout.PasswordField(_editPassword, '#', 50);
-            GUILayout.Label("Login will either verify your credentials or create a new user if it is not existing. If the username is already taken but the password does not match login will fail. The settings are saved on success.");
+            GUILayout.Label("New password (optional)", ModGlobals.HeadStyle);
+            _editNewPassword = GUILayout.PasswordField(_editNewPassword, '#', 50);
+            GUILayout.Label("Submit will either verify your credentials or create a new user if it is not existing. The settings are saved on success.");
             GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Login"))
+            if (GUILayout.Button("Submit"))
             {
-                _working = true;
-                _api.SetConfig(_editHostAddress, _editUsername, _editPassword);
                 try
                 {
-                    _api.PostUser(_editUsername, _editPassword, delegate(IRestResponse response)
+                    _working = true;
+                    _api.SetConfig(_editHostAddress, _editUsername, _editPassword);
+                    _api.PostUser(_editUsername, _editPassword, _editNewPassword, delegate(IRestResponse response)
                     {
                         _working = false;
                         if (response.ErrorException != null)
@@ -100,20 +107,32 @@ namespace KerbalCraft
                             _status = "Connection failed";
                             return;
                         }
+                        _status = null;
+                        if (response.ContentLength > 0)
+                        {
+                            _status = _api.Deserialize<CraftMessage>(response).message;
+                        }
                         switch (response.StatusCode)
                         {
+                            case HttpStatusCode.OK:
                             case HttpStatusCode.NoContent:
-                                _status = "Success, settings saved";
+                                if (!string.IsNullOrEmpty(_editNewPassword))
+                                {
+                                    _editPassword = _editNewPassword;
+                                    _editNewPassword = "";
+                                }
                                 ModSettings.SetConfig(_editHostAddress, _editUsername, _editPassword);
                                 ModSettings.SaveConfig();
                                 break;
-                            case HttpStatusCode.Unauthorized:
-                                _status = "Login failed";
-                                break;
                             default:
-                                _status = string.Format("Error ({0} {1})", (int)response.StatusCode, response.StatusDescription);
+                                if (string.IsNullOrEmpty(_status))
+                                {
+                                    _status = string.Format("Error ({0} {1})", (int)response.StatusCode, response.StatusDescription);
+                                }
                                 break;
                         }
+                        // reset window size to adjust to the new message
+                        ResetWindowSize();
                     });
                 }
                 catch (Exception ex)
