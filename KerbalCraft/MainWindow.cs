@@ -148,7 +148,7 @@ namespace KerbalCraft
         private void DrawTable()
         {
             // add table headers
-            var cells = new List<string> { "Name", "Type", "Author" };
+            var cells = new List<string> { "Name", "Type", "Author", "Downloads" };
             var dimension = cells.Count;
             if (_pageLength == 0)
             {
@@ -159,7 +159,7 @@ namespace KerbalCraft
                 // add table data
                 foreach (var craft in _craftList)
                 {
-                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author.username });
+                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author.username, craft.downloads.ToString() });
                 }
             }
             // draw table

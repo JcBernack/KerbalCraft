@@ -6,6 +6,8 @@ var CraftSchema = mongoose.Schema({
     author: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     craft: { type: String, required: true },
     thumbnail: { type: Buffer, required: true },
+    impressions: { type: Number, default: 0 },
+    downloads: { type: Number, default: 0 },
     info: { type: mongoose.Schema.Types.Mixed }
 });
 

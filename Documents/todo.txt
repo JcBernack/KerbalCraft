@@ -10,4 +10,3 @@ Build multiple thumbnails to animate a rotating ship in the preview
 Add an Ember-Website which also consumes the REST service to display crafts
  - start with a simple read-only list and details page, just like the window in KSP
 Add detection for non-stock parst
-Add download counter

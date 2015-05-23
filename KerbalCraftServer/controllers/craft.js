@@ -60,7 +60,7 @@ module.exports.postCraft = function (req, res) {
 module.exports.getCraft = function(req, res) {
     var skip = queryInt(req, "skip", 0, 0);
     var limit = queryInt(req, "limit", 20, 1, 50);
-    Craft.find(null, { date: true, author: true, info: true }, { sort: { date: -1 }, skip: skip, limit: limit })
+    Craft.find(null, { date: true, author: true, info: true, downloads: true, impressions: true }, { sort: { date: -1 }, skip: skip, limit: limit })
         .populate("author", { _id: true, username: true })
         .exec(function(err, crafts) {
             if (err) return handleError(err, res);
@@ -71,36 +71,43 @@ module.exports.getCraft = function(req, res) {
     
 // GET craft data
 module.exports.getCraftData = function(req, res) {
-    Craft.findById(req.params.id, { _id: false, craft: true },
-        function(err, craft) {
+    Craft.findById(req.params.id, { craft: true, downloads: true }, function(err, craft) {
+        if (err) return handleError(err, res);
+        if (!craft) return res.status(404).end();
+        // increase download counter
+        craft.downloads++;
+        craft.save(function (err) {
             if (err) return handleError(err, res);
-            if (!craft) return res.status(404).end();
+            // return craft data
             res.set("Content-Type", "text/plain");
             res.send(lzf.compress(new Buffer(craft.craft)));
-        }
-    );
+        });
+    });
 };
     
 // GET craft thumbnail
 module.exports.getCraftThumbnail = function(req, res) {
-    Craft.findById(req.params.id, { _id: false, thumbnail: true },
-        function(err, craft) {
+    Craft.findById(req.params.id, { thumbnail: true, impressions: true }, function (err, craft) {
+        if (err) return handleError(err, res);
+        if (!craft) return res.status(404).end();
+        // increase impressions counter
+        craft.impressions++;
+        craft.save(function (err) {
             if (err) return handleError(err, res);
-            if (!craft) return res.status(404).end();
+            // return craft thumbnail
             res.set("Content-Type", "image/png");
             res.send(craft.thumbnail);
-        }
-    );
+        });
+        
+    });
 };
     
 // DELETE craft
 module.exports.deleteCraft = function(req, res) {
     //TODO: find out how to remove without selecting the removed entry
-    Craft.findByIdAndRemove(req.params.id, { select: { _id: true } },
-        function(err, craft) {
-            if (err) return handleError(err, res);
-            if (!craft) return res.status(404).end();
-            res.status(204).end();
-        }
-    );
+    Craft.findByIdAndRemove(req.params.id, { select: { _id: true } }, function (err, craft) {
+        if (err) return handleError(err, res);
+        if (!craft) return res.status(404).end();
+        res.status(204).end();
+    });
 };
