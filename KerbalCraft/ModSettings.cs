@@ -13,6 +13,7 @@ namespace KerbalCraft
         public static event Action ConfigSaved;
 
         private static readonly string ConfigPath;
+        private static readonly string _troll = "jnDFX#ecirM_TuV1XuAjHXYpPMQyC$xRC0RiMW2diaqi*jWh96L!YLc21Z<HcMMF";
 
         static ModSettings()
         {
@@ -42,6 +43,7 @@ namespace KerbalCraft
                 var hostAddress = config.GetValue("HostAddress");
                 var username = config.GetValue("Username");
                 var password = config.GetValue("Password");
+                if (password != null) password = DetrollPassword(password);
                 Debug.Log("[KerbalCraft] configuration loaded");
                 SetConfig(hostAddress, username, password);
             }
@@ -61,8 +63,7 @@ namespace KerbalCraft
                 var config = new ConfigNode();
                 config.AddValue("HostAddress", HostAddress);
                 config.AddValue("Username", Username);
-                //TODO: add some security by obscurity to the saved password
-                config.AddValue("Password", Password);
+                config.AddValue("Password", TrollPassword(Password));
                 config.Save(ConfigPath);
                 Debug.Log("[KerbalCraft] configuration saved");
             }
@@ -72,6 +73,34 @@ namespace KerbalCraft
                 Debug.LogException(ex);
             }
             if (ConfigSaved != null) ConfigSaved();
+        }
+
+        private static string TrollPassword(string password)
+        {
+            try
+            {
+                return AesEncryptamajig.Encrypt(password, _troll);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[KerbalCraft] failed to jumble password");
+                Debug.LogException(ex);
+                return "";
+            }
+        }
+
+        private static string DetrollPassword(string password)
+        {
+            try
+            {
+                return AesEncryptamajig.Decrypt(password, _troll);
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("[KerbalCraft] failed to unjumble password");
+                Debug.LogException(ex);
+                return "";
+            }
         }
     }
 }

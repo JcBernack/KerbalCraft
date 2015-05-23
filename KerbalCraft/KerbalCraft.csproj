@@ -46,6 +46,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AesEncryptamajig.cs" />
     <Compile Include="CLZF2.cs" />
     <Compile Include="Models\CraftUser.cs" />
     <Compile Include="Models\CraftInfo.cs" />

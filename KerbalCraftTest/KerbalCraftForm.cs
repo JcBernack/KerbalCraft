@@ -19,7 +19,7 @@ namespace KerbalCraftTest
         {
             InitializeComponent();
             _api = new RestApi();
-            _api.SetConfig("localhost:10412", "huso", "lolol");
+            _api.SetConfig("localhost:10412", "huso", "lololol");
         }
 
         private void button1_Click(object sender, EventArgs e)
