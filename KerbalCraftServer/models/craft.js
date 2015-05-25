@@ -21,12 +21,12 @@ CraftSchema.methods.parseCraft = function () {
     });
     // update the information object
     this.info = {
-        ship: v.ship,
-        type: v.type,
-        description: v.description,
-        version: v.version,
-        partCount: config.countByName("PART"),
-        size: sizes.join(" x ")
+        "Name": v.ship,
+        "Type": v.type,
+        "Part Count": config.countByName("PART"),
+        "Size": sizes.join(" x "),
+        "KSP Version": v.version,
+        "Description": v.description.replace(/\u00A8/g, "\n")
     };
     // allow chaining
     return this;

@@ -49,7 +49,6 @@
     <Compile Include="AesEncryptamajig.cs" />
     <Compile Include="CLZF2.cs" />
     <Compile Include="Models\CraftUser.cs" />
-    <Compile Include="Models\CraftInfo.cs" />
     <Compile Include="GUIHelper.cs" />
     <Compile Include="Models\CraftMessage.cs" />
     <Compile Include="ModGlobals.cs" />

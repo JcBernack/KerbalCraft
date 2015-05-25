@@ -16,6 +16,7 @@ namespace KerbalCraft
         public static Texture2D IconSmall { get; private set; }
         public static Texture2D IconLarge { get; private set; }
         public static Texture2D TransparentTexture { get; private set; }
+        public static GUIStyle LabelStyle { get; private set; }
         public static GUIStyle HeadStyle { get; private set; }
         public static GUIStyle RowStyle { get; private set; }
         public static GUIStyle MessageStyle { get; private set; }
@@ -44,12 +45,16 @@ namespace KerbalCraft
             TransparentTexture.SetPixel(0, 0, new Color(0, 0, 0, 0));
             TransparentTexture.Apply();
             // define gui styles for table headers and rows
-            HeadStyle = new GUIStyle(GUI.skin.label)
+            LabelStyle = new GUIStyle(GUI.skin.label)
+            {
+                padding = new RectOffset()
+            };
+            HeadStyle = new GUIStyle(LabelStyle)
             {
                 fontStyle = FontStyle.Bold,
                 wordWrap = false
             };
-            RowStyle = new GUIStyle(GUI.skin.label)
+            RowStyle = new GUIStyle(LabelStyle)
             {
                 wordWrap = false,
                 hover =
@@ -58,7 +63,7 @@ namespace KerbalCraft
                     textColor = Color.white
                 }
             };
-            MessageStyle = new GUIStyle(GUI.skin.label)
+            MessageStyle = new GUIStyle(LabelStyle)
             {
                 fontStyle = FontStyle.Bold
             };

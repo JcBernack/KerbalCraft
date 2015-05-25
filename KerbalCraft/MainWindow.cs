@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Reflection;
 using KerbalCraft.Models;
@@ -148,7 +149,7 @@ namespace KerbalCraft
         private void DrawTable()
         {
             // add table headers
-            var cells = new List<string> { "Name", "Type", "Author", "Downloads" };
+            var cells = Craft.GetInfoNames().ToList();
             var dimension = cells.Count;
             if (_pageLength == 0)
             {
@@ -159,7 +160,7 @@ namespace KerbalCraft
                 // add table data
                 foreach (var craft in _craftList)
                 {
-                    cells.AddRange(new[] { craft.info.ship, craft.info.type, craft.author.username, craft.downloads.ToString() });
+                    cells.AddRange(craft.GetInfoValues());
                 }
             }
             // draw table
@@ -216,17 +217,25 @@ namespace KerbalCraft
                 GUILayout.Label("Nothing selected.");
                 return;
             }
+            GUILayout.BeginHorizontal();
             // draw thumbnail or icon
             GUILayout.Box(_selectedCraft.ThumbnailCache == null ? ModGlobals.IconLarge : _thumbnail);
             // draw details table
-            //TODO: maybe somehow automatically add all properties of the info object
-            var cells = new[]
+            GUILayout.BeginVertical();
+            GUILayout.BeginHorizontal();
+            GUILayout.BeginVertical();
+            foreach (var key in _selectedCraft.GetExtendedInfoNames())
             {
-                "Name:", "Type:", "Author:", "Date:", "Size:", "Part count:", "KSP version:", "Description:",
-                _selectedCraft.info.ship, _selectedCraft.info.type, _selectedCraft.author.username, _selectedCraft.date.ToLongDateString(),
-                _selectedCraft.info.size, _selectedCraft.info.partCount, _selectedCraft.info.version, _selectedCraft.info.description
-            };
-            GUIHelper.Grid(8, true, cells);
+                GUILayout.Label(key, ModGlobals.HeadStyle);
+            }
+            GUILayout.EndVertical();
+            GUILayout.BeginVertical();
+            foreach (var value in _selectedCraft.GetExtendedInfoValues())
+            {
+                GUILayout.Label(value, ModGlobals.RowStyle);
+            }
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
             GUILayout.BeginHorizontal();
             // draw delete button if the user owns the craft
             // just comparing the username is not enough of course, but the server will make sure
@@ -258,6 +267,13 @@ namespace KerbalCraft
                 }
             }
             GUILayout.EndHorizontal();
+            GUILayout.EndVertical();
+            GUILayout.EndHorizontal();
+            if (!string.IsNullOrEmpty(_selectedCraft.Description))
+            {
+                GUILayout.Label(Craft.DescriptionKey, ModGlobals.HeadStyle);
+                GUILayout.Label(_selectedCraft.Description, ModGlobals.LabelStyle);
+            }
         }
 
         private void RequestCraftData(Craft craft, bool merge)

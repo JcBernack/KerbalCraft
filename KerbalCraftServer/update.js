@@ -1,6 +1,6 @@
 ﻿var argv = require("minimist")(process.argv.slice(2));
 var mongoose = require("mongoose");
-var model = require("./model.js");
+var Craft = require("./models/craft.js");
 
 if (argv.h || argv.help) {
     console.log("Usage:");
@@ -24,13 +24,13 @@ function handleError(err) {
 }
 
 // iterate over all craft in the database
-model.Craft.find(null, { craft: true }, function (err, crafts) {
+Craft.find(null, { craft: true }, function (err, crafts) {
     if (err) {
         console.log("Error retrieving data from database.");
         return;
     }
     for (var i = 0; i < crafts.length; i++) {
-        //TODO: check if that ugly version \r also works under unix
+        //TODO: check if that ugly version of \r also works under unix
         process.stdout.write("Processing craft " + (i+1) + "/" + crafts.length + ": " + crafts[i]._id + "\033[0G");
         try {
             // invoke parser to update craft information
